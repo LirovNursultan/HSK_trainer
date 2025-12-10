@@ -47,6 +47,33 @@ class MyDictionary(models.Model):
     def __str__(self):
         return f"Словарь {self.user.username}"
     
+    def add_card(self, card):
+        """Добавить карточку в словарь"""
+        dictionary_card, created = DictionaryCard.objects.get_or_create(
+            dictionary=self,
+            card=card
+        )
+        return created
+    
+    def remove_card(self, card):
+        """Удалить карточку из словаря"""
+        return DictionaryCard.objects.filter(
+            dictionary=self,
+            card=card
+        ).delete()
+    
+    def get_cards_count(self):
+        """Получить количество карточек в словаре"""
+        return self.cards.count()
+    
+    def get_cards_by_level(self, level):
+        """Получить карточки по уровню HSK"""
+        return self.cards.filter(level=level) if hasattr(self.cards.model, 'level') else []
+    
+    def clear(self):
+        """Очистить словарь"""
+        self.cards.clear()
+    
 
 class DictionaryCard(models.Model):
     """
@@ -117,7 +144,34 @@ class DictionaryCard(models.Model):
     def __str__(self):
         return f"{self.card.hieroglyph} в словаре {self.dictionary.user.username}"
     
-
+    def get_accuracy(self):
+        """Получить процент правильных ответов"""
+        total = self.times_correct + self.times_incorrect
+        if total == 0:
+            return 0
+        return round((self.times_correct / total) * 100, 1)
+    
+    def mark_viewed(self):
+        """Отметить карточку как просмотренную"""
+        self.times_viewed += 1
+        self.last_viewed = timezone.now()
+        self.save()
+    
+    def mark_correct(self):
+        """Отметить правильный ответ"""
+        self.times_correct += 1
+        self.mark_viewed()
+    
+    def mark_incorrect(self):
+        """Отметить неправильный ответ"""
+        self.times_incorrect += 1
+        self.mark_viewed()
+    
+    def toggle_learned(self):
+        """Переключить статус изученности"""
+        self.is_learned = not self.is_learned
+        self.save()
+        return self.is_learned
 
 # Сигналы для автоматического создания словаря при регистрации
 from django.db.models.signals import post_save

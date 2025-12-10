@@ -1,0 +1,299 @@
+{% extends '../base.html' %}
+{% block content %}
+<div class="container py-5">
+    <!-- Кнопка назад -->
+    <div class="mb-4">
+        <a href="{% url 'my_dictionary' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Вернуться в словарь
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- Основная карточка -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
+                <div class="card-body p-5 text-center" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                    <!-- Иероглиф -->
+                    <div style="font-size: 5rem; font-weight: bold; margin-bottom: 2rem; font-family: 'SimHei', 'Microsoft YaHei', sans-serif; line-height: 1;">
+                        {{ card.hieroglyph }}
+                    </div>
+
+                    <!-- Пиньинь -->
+                    <div class="mb-4">
+                        <h4 class="mb-2" style="opacity: 0.9;">Пиньинь</h4>
+                        <p style="font-size: 1.5rem; font-weight: 500; margin: 0;">{{ card.transcription }}</p>
+                    </div>
+
+                    <!-- Перевод -->
+                    <div class="mb-4">
+                        <h4 class="mb-2" style="opacity: 0.9;">Перевод</h4>
+                        <p style="font-size: 1.3rem; margin: 0;">{{ card.translate }}</p>
+                    </div>
+
+                    <!-- Кнопка воспроизведения -->
+                    {% if card.audio %}
+                        <div class="mt-4">
+                            <button class="btn btn-light btn-lg" onclick="playAudio('{{ card.audio.url }}')">
+                                <i class="bi bi-play-circle"></i> Прослушать произношение
+                            </button>
+                        </div>
+                    {% else %}
+                        <div class="mt-4">
+                            <button class="btn btn-light btn-lg" disabled>
+                                <i class="bi bi-mic-mute"></i> Аудио недоступно
+                            </button>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Действия с карточкой -->
+            <div class="mt-4 d-flex gap-2">
+                <!-- Изученность -->
+                <button class="btn btn-lg {% if card_info.is_learned %}btn-success{% else %}btn-outline-success{% endif %} toggle-learned" 
+                        data-card-id="{{ card.id }}"
+                        style="flex: 1; border-radius: 8px;">
+                    <i class="bi {% if card_info.is_learned %}bi-check-circle-fill{% else %}bi-circle{% endif %}"></i>
+                    {% if card_info.is_learned %}Изучена{% else %}Отметить как изученную{% endif %}
+                </button>
+
+                <!-- Удалить -->
+                <button class="btn btn-lg btn-outline-danger remove-card" 
+                        data-card-id="{{ card.id }}"
+                        style="flex: 1; border-radius: 8px;">
+                    <i class="bi bi-trash"></i> Удалить
+                </button>
+            </div>
+        </div>
+
+        <!-- Статистика -->
+        <div class="col-lg-6">
+            <!-- Прогресс точности -->
+            <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px;">
+                <div class="card-body p-4">
+                    <h5 class="card-title mb-3">Точность ответов</h5>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Процент правильных ответов</span>
+                            <strong class="text-danger" style="font-size: 1.3rem;">{{ accuracy }}%</strong>
+                        </div>
+                        <div class="progress" style="height: 25px; border-radius: 8px;">
+                            <div class="progress-bar {% if accuracy >= 80 %}bg-success{% elif accuracy >= 50 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                 style="width: {{ accuracy }}%; border-radius: 8px;" 
+                                 role="progressbar">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Статистика просмотров -->
+            <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px;">
+                <div class="card-body p-4">
+                    <h5 class="card-title mb-4">Статистика обучения</h5>
+                    
+                    <div class="row text-center mb-3">
+                        <div class="col-6">
+                            <div class="bg-light p-3" style="border-radius: 8px; margin-bottom: 1rem;">
+                                <h3 class="text-primary mb-1">{{ card_info.times_viewed }}</h3>
+                                <small class="text-muted">Просмотров</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="bg-light p-3" style="border-radius: 8px; margin-bottom: 1rem;">
+                                <h3 class="text-success mb-1">{{ card_info.times_correct }}</h3>
+                                <small class="text-muted">Правильных</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="bg-light p-3" style="border-radius: 8px; margin-bottom: 1rem;">
+                                <h3 class="text-danger mb-1">{{ card_info.times_incorrect }}</h3>
+                                <small class="text-muted">Неправильных</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="bg-light p-3" style="border-radius: 8px; margin-bottom: 1rem;">
+                                <h3 class="mb-1">
+                                    {% if card_info.last_viewed %}
+                                        {{ card_info.last_viewed|date:"d.m" }}
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </h3>
+                                <small class="text-muted">Последний просмотр</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- История добавления -->
+            <div class="card border-0 shadow-sm" style="border-radius: 12px;">
+                <div class="card-body p-4">
+                    <h5 class="card-title mb-3">Информация</h5>
+                    <div class="mb-3">
+                        <small class="text-muted d-block">Добавлено в словарь</small>
+                        <strong>{{ card_info.added_at|date:"d.m.Y H:i" }}</strong>
+                    </div>
+                    {% if card_info.notes %}
+                        <div>
+                            <small class="text-muted d-block">Заметки</small>
+                            <p class="mb-0" style="background: #f8f9fa; padding: 0.75rem; border-radius: 6px; border-left: 3px solid #dc3545;">
+                                {{ card_info.notes|linebreaks }}
+                            </p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Секция отметки результатов -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm" style="border-radius: 12px;">
+                <div class="card-body p-4">
+                    <h5 class="card-title mb-4">Отметить результат</h5>
+                    <div class="d-flex gap-3">
+                        <button class="btn btn-success btn-lg mark-result" data-result="correct" style="flex: 1; border-radius: 8px;">
+                            <i class="bi bi-check-circle"></i> Я ответил правильно
+                        </button>
+                        <button class="btn btn-danger btn-lg mark-result" data-result="incorrect" style="flex: 1; border-radius: 8px;">
+                            <i class="bi bi-x-circle"></i> Я ошибся
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function playAudio(audioUrl) {
+        const audio = new Audio(audioUrl);
+        audio.play();
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function showNotification(message, type = 'success') {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+        alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 1050; min-width: 300px;';
+        alertDiv.innerHTML = `
+            <i class="bi bi-check-circle"></i> ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(alertDiv);
+        setTimeout(() => alertDiv.remove(), 3000);
+    }
+
+    // Отметить результат
+    document.querySelectorAll('.mark-result').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const result = this.getAttribute('data-result');
+            markResult(result);
+        });
+    });
+
+    function markResult(result) {
+        fetch(`/api/dictionary/mark-result/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken'),
+            },
+            body: JSON.stringify({ 
+                card_id: {{ card.id }},
+                result: result
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('Результат записан!', 'success');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showNotification('Ошибка при сохранении', 'danger');
+            }
+        });
+    }
+
+    // Удалить из словаря
+    document.querySelector('.remove-card').addEventListener('click', function() {
+        if (confirm('Вы уверены, что хотите удалить эту карточку?')) {
+            const cardId = this.getAttribute('data-card-id');
+            fetch(`/api/dictionary/remove/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                },
+                body: JSON.stringify({ card_id: cardId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = '{% url "my_dictionary" %}';
+                }
+            });
+        }
+    });
+
+    // Отметить как изученную
+    document.querySelector('.toggle-learned').addEventListener('click', function() {
+        const cardId = this.getAttribute('data-card-id');
+        fetch(`/api/dictionary/toggle-learned/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken'),
+            },
+            body: JSON.stringify({ card_id: cardId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('Статус обновлен!', 'success');
+                setTimeout(() => location.reload(), 1500);
+            }
+        });
+    });
+</script>
+
+<style>
+    .card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 16px rgba(0,0,0,0.15) !important;
+    }
+
+    .btn {
+        transition: all 0.3s ease;
+    }
+
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+</style>
+{% endblock %}
