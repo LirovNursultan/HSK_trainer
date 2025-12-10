@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Card list</title>
+</head>
+<body>
+    <h1>Список карточек</h1>
+    <a href ="{%url 'create_card'%}">Создай новую карточку</a>
+<ul>
+    {% for card in cards %}
+        <li>
+            <strong>{{card.hieroglyph}}</strong>
+            {{card.translate}} -
+            {{card.transcription}}
+            <a href="{% url 'edit_card' card.id %}">Изменить</a>
+            <a href="{%url 'delete_card' card.id %}">Удалить</a>
+        </li>
+    {% empty %}
+        <li>Еще нет карточек</li>
+    {% endfor %}
+</ul>
+
+</body>
+</html>

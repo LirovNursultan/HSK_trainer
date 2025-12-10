@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Create Card</title>
+</head>
+<body>
+    <h1>Create new card</h1>
+
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type = "submit">Save</button>
+    </form>
+    <a href="{% url 'card_list' %}">Back to list</a>"
+</body>
+</html>
