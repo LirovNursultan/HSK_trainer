@@ -1,0 +1,160 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HSK Карточки</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.0/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+
+        .navbar {
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .card-container {
+            padding: 2rem 0;
+        }
+
+        .card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: none;
+            border-radius: 12px;
+            overflow: hidden;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+
+        .card-body {
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .hieroglyph {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #dc3545;
+            margin-bottom: 1rem;
+            font-family: 'SimHei', 'Microsoft YaHei', sans-serif;
+        }
+
+        .translate {
+            font-size: 1.1rem;
+            color: #495057;
+            margin-bottom: 0.8rem;
+        }
+
+        .transcription {
+            font-size: 0.9rem;
+            color: #6c757d;
+            font-style: italic;
+            margin-bottom: 1rem;
+        }
+
+        .audio-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+        }
+
+        .audio-btn:disabled {
+            opacity: 0.5;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        @media (max-width: 768px) {
+            .hieroglyph {
+                font-size: 2.5rem;
+            }
+
+            .translate {
+                font-size: 1rem;
+            }
+
+            .card-body {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white">
+        <div class="container-fluid px-4">
+            <!-- Лого -->
+            <a class="navbar-brand fw-bold" href="{% url 'card_list' %}">
+                <i class="bi bi-book-half" style="color: #dc3545;"></i>
+                HSK Cards
+            </a>
+
+            <!-- Toggle для мобильных -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <!-- Меню -->
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'card_list' %}">Карточки</a>
+                    </li>
+                    
+                </ul>
+            </div>
+
+            <!-- Аватар и логин/логаут -->
+            <div class="d-flex align-items-center ms-3">
+                {% if user.is_authenticated %}
+                    <div class="dropdown">
+                        <button class="btn btn-link p-0" type="button" data-bs-toggle="dropdown">
+                            {% if user.profile.avatar %}
+                                <img src="{{ user.profile.avatar.url }}" alt="{{ user.username }}" class="avatar">
+                            {% else %}
+                                <img src="https://ui-avatars.com/api/?name={{ user.username }}&background=dc3545&color=fff" alt="{{ user.username }}" class="avatar">
+                            {% endif %}
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="#">Профиль</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#">Выход</a></li>
+                        </ul>
+                    </div>
+                {% else %}
+                    <a href="#" class="btn btn-danger btn-sm ms-2">Вход</a>
+                    <a href="#" class="btn btn-outline-danger btn-sm ms-2">Регистрация</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- Основной контент -->
+       {% block content %}{% endblock %}
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function playAudio(audioUrl) {
+            const audio = new Audio(audioUrl);
+            audio.play();
+        }
+    </script>
+</body>
+</html>

@@ -29,6 +29,6 @@ def edit_card(request, card_id):
         form = CardForm(instance=card)
     return render (request, 'trainer/edit_card.html', {'form': form})
 
-def delete_card(request,card_id):
+def delete_card(request, card_id):
     card = Card.objects.get(id=card_id)
     
