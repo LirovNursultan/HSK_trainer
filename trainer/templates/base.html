@@ -11,15 +11,12 @@
         body {
             background-color: #f8f9fa;
         }
-
         .navbar {
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-
         .card-container {
             padding: 2rem 0;
         }
-
         .card {
             transition: transform 0.3s ease, box-shadow 0.3s ease;
             border: none;
@@ -28,17 +25,14 @@
             height: 100%;
             cursor: pointer;
         }
-
         .card:hover {
             transform: translateY(-8px);
             box-shadow: 0 8px 16px rgba(0,0,0,0.1);
         }
-
         .card-body {
             padding: 1.5rem;
             text-align: center;
         }
-
         .hieroglyph {
             font-size: 3rem;
             font-weight: bold;
@@ -46,20 +40,17 @@
             margin-bottom: 1rem;
             font-family: 'SimHei', 'Microsoft YaHei', sans-serif;
         }
-
         .translate {
             font-size: 1.1rem;
             color: #495057;
             margin-bottom: 0.8rem;
         }
-
         .transcription {
             font-size: 0.9rem;
             color: #6c757d;
             font-style: italic;
             margin-bottom: 1rem;
         }
-
         .audio-btn {
             width: 40px;
             height: 40px;
@@ -69,27 +60,22 @@
             justify-content: center;
             margin: 0 auto;
         }
-
         .audio-btn:disabled {
             opacity: 0.5;
         }
-
         .avatar {
             width: 40px;
             height: 40px;
             border-radius: 50%;
             object-fit: cover;
         }
-
         @media (max-width: 768px) {
             .hieroglyph {
                 font-size: 2.5rem;
             }
-
             .translate {
                 font-size: 1rem;
             }
-
             .card-body {
                 padding: 1rem;
             }
@@ -117,7 +103,11 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'card_list' %}">Карточки</a>
                     </li>
-                    
+                    {% if user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'my_cards' %}">Мой словарь</a>
+                    </li>
+                    {% endif %}
                 </ul>
             </div>
 
@@ -125,29 +115,38 @@
             <div class="d-flex align-items-center ms-3">
                 {% if user.is_authenticated %}
                     <div class="dropdown">
-                        <button class="btn btn-link p-0" type="button" data-bs-toggle="dropdown">
-                            {% if user.profile.avatar %}
-                                <img src="{{ user.profile.avatar.url }}" alt="{{ user.username }}" class="avatar">
-                            {% else %}
-                                <img src="https://ui-avatars.com/api/?name={{ user.username }}&background=dc3545&color=fff" alt="{{ user.username }}" class="avatar">
-                            {% endif %}
+                        <button class="btn btn-link p-0 text-decoration-none" type="button" data-bs-toggle="dropdown">
+                            <img src="https://ui-avatars.com/api/?name={{ user.username }}&background=dc3545&color=fff" alt="{{ user.username }}" class="avatar">
+                            <span class="ms-2 text-dark">{{ user.username }}</span>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="#">Профиль</a></li>
+                            <li><a class="dropdown-item" href="{% url 'my_cards' %}"><i class="bi bi-book"></i> Мой словарь</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="#">Выход</a></li>
+                            <li><a class="dropdown-item" href="{% url 'accounts:logout' %}"><i class="bi bi-box-arrow-right"></i> Выход</a></li>
                         </ul>
                     </div>
                 {% else %}
-                    <a href="#" class="btn btn-danger btn-sm ms-2">Вход</a>
-                    <a href="#" class="btn btn-outline-danger btn-sm ms-2">Регистрация</a>
+                    <a href="{% url 'accounts:login' %}" class="btn btn-danger btn-sm ms-2">Вход</a>
+                    <a href="{% url 'accounts:register' %}" class="btn btn-outline-danger btn-sm ms-2">Регистрация</a>
                 {% endif %}
             </div>
         </div>
     </nav>
 
+    <!-- Сообщения -->
+    {% if messages %}
+        <div class="container mt-3">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
     <!-- Основной контент -->
-       {% block content %}{% endblock %}
+    {% block content %}{% endblock %}
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
     <script>

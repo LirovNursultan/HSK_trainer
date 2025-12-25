@@ -9,5 +9,5 @@ urlpatterns = [
     path('<int:pk>/edit', edit_card, name='edit_card'),
 
     path('my', MyDictionaryListView.as_view(), name="my_cards"),
-    path('my/<int:card_id>', MyDictCardDetailView.as_view(), name="my_card")
+    path('my/<int:card_id>/', MyDictCardDetailView.as_view(), name="my_card_detail")
 ]
