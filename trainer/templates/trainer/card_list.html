@@ -6,6 +6,11 @@
             <h1 class="mb-2">HSK Карточки</h1>
             <p class="text-muted">Управляйте своим словарём китайских иероглифов</p>
         </div>
+        <div class="col-auto">
+            <a href="{% url 'trainers_home' %}" class="btn btn-outline-danger btn-lg">
+                <i class="bi bi-rocket-takeoff-fill me-2"></i>Тренажёры
+            </a>
+        </div>
     </div>
 
     <!-- Таблица карточек -->
@@ -64,10 +69,15 @@
                                 </button>
 
                                 <!-- Кнопка добавления в словарь -->
-                                <button class="btn btn-sm btn-outline-success add-to-dictionary" 
+                                <button class="btn btn-sm add-to-dictionary {% if card.id in in_dict_ids %}btn-outline-secondary disabled{% else %}btn-outline-success{% endif %}"
                                         data-card-id="{{ card.id }}"
-                                        title="Добавить в мой словарь">
-                                    <i class="bi bi-bookmark-plus"></i> Словарь
+                                        data-original-text='<i class="bi bi-plus-circle-fill"></i> Добавить'
+                                        title="{% if card.id in in_dict_ids %}Уже в словаре{% else %}Добавить в словарь{% endif %}">
+                                    {% if card.id in in_dict_ids %}
+                                        <i class="bi bi-check-circle-fill"></i> Уже добавлено
+                                    {% else %}
+                                        <i class="bi bi-plus-circle-fill"></i> Добавить
+                                    {% endif %}
                                 </button>
                             </div>
                         </td>
@@ -99,8 +109,15 @@
                                     {% endif %}
                                 </div>
                                 <div class="modal-footer border-0">
-                                    <button type="button" class="btn btn-outline-success add-to-dictionary" data-card-id="{{ card.id }}" data-bs-dismiss="modal">
-                                        <i class="bi bi-bookmark-plus"></i> Добавить в словарь
+                                    <button type="button" class="btn add-to-dictionary {% if card.id in in_dict_ids %}btn-outline-secondary disabled{% else %}btn-outline-success{% endif %}"
+                                            data-card-id="{{ card.id }}"
+                                            data-original-text='<i class="bi bi-bookmark-plus-fill"></i> Добавить в словарь'
+                                            data-bs-dismiss="modal">
+                                        {% if card.id in in_dict_ids %}
+                                            <i class="bi bi-check-circle-fill"></i> Уже добавлено
+                                        {% else %}
+                                            <i class="bi bi-bookmark-plus-fill"></i> Добавить в словарь
+                                        {% endif %}
                                     </button>
                                 </div>
                             </div>
@@ -161,35 +178,49 @@
 
     // Обработка кнопки "Добавить в словарь"
     document.querySelectorAll('.add-to-dictionary').forEach(btn => {
-        btn.addEventListener('click', function() {
+        btn.addEventListener('click', function(e) {
+            // Если уже disabled — ничего не делаем
+            if (this.disabled) return;
+
             const cardId = this.getAttribute('data-card-id');
-            addToDictionary(cardId);
+            const originalHTML = this.getAttribute('data-original-text') || this.innerHTML;
+
+            // Временно показываем загрузку
+            this.innerHTML = '<i class="bi bi-arrow-repeat"></i> Добавление...';
+            this.disabled = true;
+
+            fetch('/api/dictionary/add/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                },
+                body: JSON.stringify({ card_id: cardId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Успех
+                    this.innerHTML = '<i class="bi bi-check-circle-fill text-danger"></i> Уже добавлено';
+                    this.classList.remove('btn-outline-success');
+                    this.classList.add('btn-outline-secondary');
+                    this.disabled = true;
+                    showNotification('Карточка добавлена в словарь', 'success');
+                } else {
+                    // Ошибка — возвращаем оригинал
+                    this.innerHTML = originalHTML;
+                    this.disabled = false;
+                    showNotification(data.message || 'Не удалось добавить', 'warning');
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка:', error);
+                this.innerHTML = originalHTML;
+                this.disabled = false;
+                showNotification('Ошибка соединения', 'danger');
+            });
         });
     });
-
-    function addToDictionary(cardId) {
-        // Отправить AJAX запрос на добавление в словарь
-        fetch(`/api/dictionary/add/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken'),
-            },
-            body: JSON.stringify({ card_id: cardId })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showNotification('Карточка добавлена в словарь', 'success');
-            } else {
-                showNotification(data.message || 'Ошибка при добавлении', 'danger');
-            }
-        })
-        .catch(error => {
-            console.error('Ошибка:', error);
-            showNotification('Ошибка соединения', 'danger');
-        });
-    }
 
     function getCookie(name) {
         let cookieValue = null;

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Мой словарь - HSK Cards</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            color: #333;
+            background: white;
+            margin: 40px;
+        }
+        h1 {
+            color: #dc3545; /* красный */
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+        .stat-card {
+            background: #f8f9fa; /* светло-серый */
+            padding: 15px;
+            border-radius: 8px;
+            width: 30%;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .stat-card h6 {
+            color: #6c757d; /* серый */
+            margin-bottom: 10px;
+        }
+        .stat-card h3 {
+            margin: 0;
+        }
+        .total { color: #dc3545; }     /* красный */
+        .learned { color: #28a745; }   /* зелёный */
+        .not-learned { color: #ffc107; } /* жёлтый */
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+        }
+        th {
+            background: #e9ecef; /* серый фон заголовка */
+            color: #495057;
+            padding: 12px;
+            text-align: left;
+            border-bottom: 2px solid #dee2e6;
+        }
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .hieroglyph {
+            font-family: 'SimHei', 'Microsoft YaHei', 'KaiTi', sans-serif;
+            font-size: 2rem;
+            font-weight: bold;
+            color: #dc3545; /* красный */
+        }
+        .transcription {
+            color: #6c757d;
+            font-style: italic;
+        }
+        .accuracy-bar {
+            display: inline-block;
+            width: 80px;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            vertical-align: middle;
+        }
+        .accuracy-fill {
+            height: 100%;
+            display: block;
+        }
+        .accuracy-fill.high { background: #28a745; }    /* ≥80% зелёный */
+        .accuracy-fill.medium { background: #ffc107; } /* 50–79% жёлтый */
+        .accuracy-fill.low { background: #dc3545; }    /* <50% красный */
+        .no-data {
+            color: #6c757d;
+            font-style: italic;
+        }
+        .empty-message {
+            text-align: center;
+            font-size: 1.2rem;
+            color: #6c757d;
+            margin-top: 50px;
+        }
+        .page-break {
+            page-break-after: always;
+        }
+    </style>
+</head>
+<body>
+    <h1>Мой словарь HSK</h1>
+
+    <!-- Статистика -->
+    <div class="stats">
+        <div class="stat-card">
+            <h6>Всего карточек</h6>
+            <h3 class="total">{{ total_cards }}</h3>
+        </div>
+        <div class="stat-card">
+            <h6>Изучено</h6>
+            <h3 class="learned">{{ learned_cards }}</h3>
+        </div>
+        <div class="stat-card">
+            <h6>Не изучено</h6>
+            <h3 class="not-learned">{{ not_learned_cards }}</h3>
+        </div>
+    </div>
+
+    {% if cards %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Иероглиф</th>
+                    <th>Пиньинь</th>
+                    <th>Перевод</th>
+                    <th>Статистика</th>
+                    <th>Точность</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for card in cards %}
+                    <tr>
+                        <td class="hieroglyph">{{ card.hieroglyph }}</td>
+                        <td class="transcription">{{ card.transcription }}</td>
+                        <td>{{ card.translate }}</td>
+                        <td>
+                            Просмотров: {{ card.dict_entry.times_viewed }}<br>
+                            ✓ {{ card.dict_entry.times_correct }} | ✗ {{ card.dict_entry.times_incorrect }}
+                        </td>
+                        <td>
+                            {% if card.dict_entry.times_viewed > 0 %}
+                                <span class="accuracy-bar">
+                                    <span class="accuracy-fill {% if card.accuracy >= 80 %}high{% elif card.accuracy >= 50 %}medium{% else %}low{% endif %}"
+                                          style="width: {{ card.accuracy }}%;"></span>
+                                </span>
+                                <strong>{{ card.accuracy }}%</strong>
+                            {% else %}
+                                <span class="no-data">Нет данных</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty-message">
+            Ваш словарь пуст.
+        </div>
+    {% endif %}
+</body>
+</html>

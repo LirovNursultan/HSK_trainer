@@ -101,6 +101,11 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
+                        <a class="nav-link" href="{% url 'my_cards_pdf' %}">
+                            <i class="bi bi-file-earmark-pdf"></i> Экспорт в PDF
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" href="{% url 'card_list' %}">Карточки</a>
                     </li>
                     {% if user.is_authenticated %}
@@ -152,7 +157,10 @@
     <script>
         function playAudio(audioUrl) {
             const audio = new Audio(audioUrl);
-            audio.play();
+            audio.play().catch(error => {
+                console.error("Ошибка воспроизведения:", error);
+                alert("Не удалось воспроизвести аудио");
+            });
         }
     </script>
 </body>

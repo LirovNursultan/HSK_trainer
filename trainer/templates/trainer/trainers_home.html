@@ -1,0 +1,52 @@
+{% extends '../base.html' %}
+{% block content %}
+
+<div class="container py-5 text-center">
+    <h1 class="mb-5" style="color: #dc3545;">Выберите тренажёр</h1>
+
+    <div class="row g-4 justify-content-center">
+        <!-- Блок флэш-карт (пока только один) -->
+        <div class="col-md-5 col-lg-4">
+            <a href="{% url 'flashcards_session' %}" class="text-decoration-none">
+                <div class="card trainer-card shadow-lg border-0 h-100 hover-lift">
+                    <div class="card-body d-flex flex-column justify-content-center p-5">
+                        <div class="display-1 mb-4" style="font-size: 6rem; color: #dc3545;">闪</div>
+                        <h3 class="fw-bold mb-3">Флэш-карты</h3>
+                        <p class="text-muted lead">Классическое повторение свайпами</p>
+                        <div class="mt-auto">
+                            <span class="btn btn-outline-danger btn-lg px-5">Начать</span>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Место для будущих тренажёров -->
+        <div class="col-md-5 col-lg-4">
+            <div class="card trainer-card shadow-lg border-0 h-100 opacity-50">
+                <div class="card-body d-flex flex-column justify-content-center p-5 text-muted">
+                    <div class="display-1 mb-4">⋯</div>
+                    <h3 class="fw-bold mb-3">Скоро</h3>
+                    <p class="lead">Напишите нам, какой тренажёр нужен следующим</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .trainer-card {
+        border-radius: 20px;
+        transition: all 0.3s ease;
+        background: white;
+    }
+    .trainer-card:hover {
+        transform: translateY(-12px);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.15) !important;
+    }
+    .hover-lift:hover {
+        transform: scale(1.04);
+    }
+</style>
+
+{% endblock %}

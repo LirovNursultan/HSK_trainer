@@ -51,3 +51,4 @@ def logout_view(request):
     logout(request)
     messages.info(request, 'Вы успешно вышли из системы')
     return redirect('card_list')
+

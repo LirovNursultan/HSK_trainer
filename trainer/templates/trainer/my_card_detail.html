@@ -3,7 +3,7 @@
 <div class="container py-5">
     <!-- Кнопка назад -->
     <div class="mb-4">
-        <a href="{% url 'my_dictionary' %}" class="btn btn-outline-secondary">
+        <a href="{% url 'my_cards' %}" class="btn btn-outline-secondary">
             <i class="bi bi-arrow-left"></i> Вернуться в словарь
         </a>
     </div>
@@ -236,10 +236,20 @@
     }
 
     // Удалить из словаря
-    document.querySelector('.remove-card').addEventListener('click', function() {
-        if (confirm('Вы уверены, что хотите удалить эту карточку?')) {
+    document.querySelectorAll('.remove-card').forEach(btn => {
+        btn.addEventListener('click', function() {
+            if (!confirm('Вы уверены, что хотите удалить эту карточку из словаря?')) {
+                return;
+            }
+
             const cardId = this.getAttribute('data-card-id');
-            fetch(`/api/dictionary/remove/`, {
+            const originalHTML = this.innerHTML;
+
+            // Показываем загрузку
+            this.innerHTML = '<i class="bi bi-arrow-repeat"></i>';
+            this.disabled = true;
+
+            fetch('/api/dictionary/remove/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -250,10 +260,22 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    window.location.href = '{% url "my_dictionary" %}';
+                    showNotification('Карточка удалена из словаря', 'success');
+                    // Просто скрываем строку таблицы или обновляем страницу
+                    location.reload();
+                } else {
+                    this.innerHTML = originalHTML;
+                    this.disabled = false;
+                    showNotification(data.message || 'Не удалось удалить', 'warning');
                 }
+            })
+            .catch(error => {
+                console.error('Ошибка:', error);
+                this.innerHTML = originalHTML;
+                this.disabled = false;
+                showNotification('Ошибка соединения', 'danger');
             });
-        }
+        });
     });
 
     // Отметить как изученную

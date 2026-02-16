@@ -1,0 +1,168 @@
+{% extends '../base.html' %}
+{% block extra_head %}
+<style>
+    body { background: #f0f2f5; }
+    .flashcard-container {
+        perspective: 1200px;
+        height: 520px;
+        max-width: 420px;
+        margin: 40px auto;
+    }
+    .flashcard {
+        width: 100%;
+        height: 100%;
+        position: relative;
+        transition: transform 0.6s;
+        transform-style: preserve-3d;
+        cursor: pointer;
+    }
+    .flashcard.flipped {
+        transform: rotateY(180deg);
+    }
+    .card-face {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        backface-visibility: hidden;
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 2rem;
+        background: white;
+    }
+    .card-back {
+        transform: rotateY(180deg);
+    }
+    .hint-zone {
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        pointer-events: none;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 3rem;
+        font-size: 1.8rem;
+        font-weight: bold;
+        opacity: 0;
+        transition: opacity 0.4s;
+        z-index: 10;
+    }
+    .hint-left  { color: #dc3545; }
+    .hint-right { color: #28a745; }
+    .swipe-left  .hint-left  { opacity: 0.9; }
+    .swipe-right .hint-right { opacity: 0.9; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="container">
+    <div class="mb-4">
+        <a href="{% url 'trainers_home' %}" class="btn btn-outline-secondary btn-lg">
+            ← Назад к выбору тренажёров
+        </a>
+    </div>
+
+    <div id="flashcard-container" class="flashcard-container">
+        <div id="card" class="flashcard">
+            <div class="card-face front">
+                <div class="mb-4">
+                    <button class="btn btn-outline-danger btn-lg audio-btn" onclick="playCurrent()">
+                        <i class="bi bi-play-fill fs-3"></i>
+                    </button>
+                </div>
+                <div id="front-hanzi" style="font-size: 8rem; font-weight: bold; color: #dc3545; font-family: SimHei, sans-serif;"></div>
+            </div>
+            <div class="card-face card-back back">
+                <div id="back-hanzi" style="font-size: 6rem; color: #dc3545;"></div>
+                <div id="pinyin" class="fs-3 text-muted mt-4"></div>
+                <div id="translate" class="fs-4 fw-bold mt-3"></div>
+            </div>
+        </div>
+
+        <!-- подсказки при свайпе -->
+        <div id="swipe-hint" class="hint-zone">
+            <div class="hint-left">Сюда → снова</div>
+            <div class="hint-right">→ Запомнил</div>
+        </div>
+    </div>
+</div>
+
+<script>
+const cards = {{ cards_json|safe }};
+let currentIndex = 0;
+let queue = [...cards];  // рабочая очередь
+
+function loadCard() {
+    if (queue.length === 0) {
+        alert("Карточки закончились в этой сессии!");
+        return;
+    }
+    const card = queue[currentIndex];
+    document.getElementById('front-hanzi').textContent = card.hieroglyph;
+    document.getElementById('back-hanzi').textContent = card.hieroglyph;
+    document.getElementById('pinyin').textContent = card.transcription;
+    document.getElementById('translate').textContent = card.translate;
+
+    // сбрасываем поворот
+    const fc = document.getElementById('card');
+    fc.classList.remove('flipped');
+    fc.classList.remove('swipe-left', 'swipe-right');
+}
+
+function playCurrent() {
+    const idx = currentIndex;
+    if (queue[idx]?.audio) {
+        new Audio(queue[idx].audio).play();
+    }
+}
+
+function nextCard() {
+    currentIndex = (currentIndex + 1) % queue.length;
+    loadCard();
+}
+
+// ------------------- Свайпы -------------------
+let startX = 0;
+const container = document.getElementById('flashcard-container');
+
+container.addEventListener('touchstart', e => {
+    startX = e.touches[0].clientX;
+});
+
+container.addEventListener('touchend', e => {
+    const endX = e.changedTouches[0].clientX;
+    const diff = endX - startX;
+
+    const cardEl = document.getElementById('card');
+
+    if (Math.abs(diff) > 100) {
+        if (diff > 0) {
+            // ← свайп влево → снова показывать
+            cardEl.classList.add('swipe-left');
+            setTimeout(nextCard, 600);
+        } else {
+            // → свайп вправо → убираем из сессии
+            cardEl.classList.add('swipe-right');
+            queue.splice(currentIndex, 1);
+            if (queue.length === 0) {
+                setTimeout(() => alert("Отлично! Всё повторили в этой сессии."), 800);
+            } else {
+                setTimeout(nextCard, 600);
+            }
+        }
+    }
+});
+
+// переворот по клику
+document.getElementById('card').addEventListener('click', () => {
+    document.getElementById('card').classList.toggle('flipped');
+});
+
+loadCard(); // первый запуск
+</script>
+
+{% endblock %}
