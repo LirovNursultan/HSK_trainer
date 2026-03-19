@@ -22,11 +22,47 @@ def trainers_home(request):
 
 @login_required
 def flashcards_session(request):
-    # Пока берём все карточки — в будущем можно фильтровать
-    # по словарю пользователя, по уровню и т.д.
-    cards = Card.objects.all().order_by('?')[:50]   # случайные 50 для примера
-    return render(request, 'trainer/flashcards.html', {
-        'cards_json': cards.values('id', 'hieroglyph', 'transcription', 'translate', 'audio'),
+    # Получаем словарь текущего пользователя
+    try:
+        user_dict = request.user.dictionary          # related_name='dictionary'
+    except MyDictionary.DoesNotExist:
+        # если словарь по какой-то причине не создан — создаём
+        user_dict = MyDictionary.objects.create(user=request.user)
+
+    # Берём ВСЕ карточки из личного словаря пользователя
+    cards = user_dict.cards.all().order_by('?')[:50]  # Случайные 50 из словаря пользователя
+    # (через промежуточную модель DictionaryCard)
+    # dict_cards = DictionaryCard.objects.filter(dictionary=user_dict)
+    
+    if not cards.exists():
+        print("DEBUG cards:", card_data)
+        return render(request, 'trainer/flashcards.html', {
+            'cards_json': [],
+            'debug_message': 'В вашем личном словаре пока нет карточек'
+        })
+
+    # Получаем связанные Card и нужные поля
+    # cards = Card.objects.all()
+
+     # можно убрать .order_by('?'), если хочешь стабильный порядок
+    
+    # Формируем данные для фронта
+    card_data = []
+    for card in cards:
+        audio_url = None
+        if card.audio:
+            audio_url = request.build_absolute_uri(card.audio.url)
+
+        card_data.append({
+            'id': card.id,
+            'hieroglyph': card.hieroglyph,
+            'transcription': card.transcription,
+            'translate': card.translate,
+            'audio': audio_url,
+        })
+
+    return render(request, 'trainer/flashcards.html', { "cards": cards,
+        'cards_json': json.dumps(card_data)
     })
 
 class MyDictionaryPDFView(LoginRequiredMixin, View):
@@ -339,3 +375,6 @@ class MyDictCardDetailView(LoginRequiredMixin, DetailView):
         context['accuracy'] = dict_entry.get_accuracy()
         
         return context
+    
+
+

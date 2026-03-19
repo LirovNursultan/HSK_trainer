@@ -1,168 +1,473 @@
 {% extends '../base.html' %}
+
 {% block extra_head %}
 <style>
-    body { background: #f0f2f5; }
-    .flashcard-container {
-        perspective: 1200px;
-        height: 520px;
-        max-width: 420px;
-        margin: 40px auto;
-    }
-    .flashcard {
-        width: 100%;
-        height: 100%;
-        position: relative;
-        transition: transform 0.6s;
-        transform-style: preserve-3d;
-        cursor: pointer;
-    }
-    .flashcard.flipped {
-        transform: rotateY(180deg);
-    }
-    .card-face {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        backface-visibility: hidden;
-        border-radius: 20px;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    .navbar { display: none !important; }
+    body { background: #f8f9fa !important; }
+
+    .fc-page {
+        min-height: 100vh;
         display: flex;
         flex-direction: column;
-        justify-content: center;
         align-items: center;
-        padding: 2rem;
-        background: white;
+        padding: 2rem 1rem 4rem;
     }
-    .card-back {
+
+    /* ── Кнопка назад ── */
+    .fc-back {
+        align-self: flex-start;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        color: #6c757d;
+        font-size: 0.8rem;
+        font-weight: 500;
+        text-decoration: none;
+        border: 1.5px solid #dee2e6;
+        padding: 0.5rem 1rem;
+        border-radius: 100px;
+        background: #fff;
+        transition: all 0.2s ease;
+        margin-bottom: 2.5rem;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    .fc-back:hover { color: #dc3545; border-color: #dc3545; background: #fff5f5; text-decoration: none; }
+    .fc-back svg { width: 15px; height: 15px; flex-shrink: 0; transition: transform 0.2s; }
+    .fc-back:hover svg { transform: translateX(-3px); }
+
+    /* ── Счётчик ── */
+    .fc-counter {
+        font-size: 0.8rem;
+        color: #adb5bd;
+        margin-bottom: 2.5rem;
+        letter-spacing: 0.05em;
+    }
+    .fc-counter strong { color: #dc3545; }
+
+    /* ── Стопка ── */
+    .fc-stack {
+        position: relative;
+        width: 320px;
+        height: 420px;
+        margin-bottom: 3rem;
+        flex-shrink: 0;
+        perspective: 1000px;
+    }
+
+    .fc-ghost {
+        position: absolute;
+        border-radius: 20px;
+        border: 1.5px solid #e9ecef;
+    }
+    .fc-ghost:nth-child(1) {
+        width: 88%; height: 100%;
+        bottom: -12px; left: 6%;
+        background: #ececec;
+        transform: rotate(3.5deg);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.07);
+    }
+    .fc-ghost:nth-child(2) {
+        width: 94%; height: 100%;
+        bottom: -6px; left: 3%;
+        background: #f3f3f3;
+        transform: rotate(-1.5deg);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.07);
+    }
+
+    /* ── Flipper ── */
+    .fc-card-flipper {
+        position: absolute;
+        width: 100%; height: 100%;
+        z-index: 3;
+        transform-style: preserve-3d;
+        transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+        user-select: none;
+    }
+    .fc-card-flipper.flipped {
         transform: rotateY(180deg);
     }
-    .hint-zone {
+
+    /* ── Стороны карточки ── */
+    .fc-face {
         position: absolute;
-        top: 0; left: 0; right: 0; bottom: 0;
-        pointer-events: none;
+        width: 100%; height: 100%;
+        border-radius: 20px;
+        background: #fff;
+        border: 1.5px solid #e9ecef;
+        box-shadow: 0 12px 40px rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.06);
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
+        overflow: hidden;
         display: flex;
-        justify-content: space-between;
+        flex-direction: column;
         align-items: center;
-        padding: 0 3rem;
-        font-size: 1.8rem;
-        font-weight: bold;
-        opacity: 0;
-        transition: opacity 0.4s;
-        z-index: 10;
+        justify-content: center;
     }
-    .hint-left  { color: #dc3545; }
-    .hint-right { color: #28a745; }
-    .swipe-left  .hint-left  { opacity: 0.9; }
-    .swipe-right .hint-right { opacity: 0.9; }
+    .fc-face::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #dc3545, #ff6b6b);
+        border-radius: 20px 20px 0 0;
+    }
+    .fc-back-face { transform: rotateY(180deg); }
+
+    /* ── Кнопка аудио ── */
+    .fc-audio-btn {
+        position: absolute;
+        top: 1rem; right: 1rem;
+        width: 40px; height: 40px;
+        border-radius: 50%;
+        border: 1.5px solid #dee2e6;
+        background: #f8f9fa;
+        color: #adb5bd;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        padding: 0; z-index: 5;
+    }
+    .fc-audio-btn:hover { background: #fff5f5; border-color: #dc3545; color: #dc3545; transform: scale(1.1); }
+    .fc-audio-btn svg { width: 15px; height: 15px; }
+    .fc-audio-btn.playing {
+        background: #fff5f5; border-color: #dc3545; color: #dc3545;
+        animation: pulse-ring 1.2s ease infinite;
+    }
+    @keyframes pulse-ring {
+        0%   { box-shadow: 0 0 0 0 rgba(220,53,69,0.35); }
+        70%  { box-shadow: 0 0 0 8px rgba(220,53,69,0); }
+        100% { box-shadow: 0 0 0 0 rgba(220,53,69,0); }
+    }
+
+    /* ── Лицевая сторона ── */
+    .fc-hanzi {
+        font-family: 'SimHei', 'Microsoft YaHei', 'PingFang SC', sans-serif;
+        font-size: 6.5rem;
+        font-weight: bold;
+        color: #212529;
+        line-height: 1;
+    }
+    .fc-tap-hint {
+        position: absolute;
+        bottom: 1rem;
+        font-size: 0.7rem;
+        color: #ced4da;
+    }
+
+    /* ── Обратная сторона ── */
+    .fc-back-hanzi {
+        font-family: 'SimHei', 'Microsoft YaHei', 'PingFang SC', sans-serif;
+        font-size: 3.5rem;
+        font-weight: bold;
+        color: #dc3545;
+        line-height: 1;
+        margin-bottom: 0.6rem;
+    }
+    .fc-pinyin   { font-size: 1.1rem; color: #6c757d; font-style: italic; margin-bottom: 0.8rem; }
+    .fc-translate { font-size: 1.2rem; font-weight: 600; color: #212529; text-align: center; padding: 0 1.5rem; }
+
+    /* ── Стрелки на обратной стороне ── */
+    .fc-arrow {
+        position: absolute;
+        top: 1rem;
+        display: flex; align-items: center; gap: 0.3rem;
+        font-size: 0.72rem; font-weight: 600;
+        cursor: pointer;
+        padding: 0.35rem 0.7rem;
+        border-radius: 100px;
+        border: 1.5px solid currentColor;
+        background: #fff;
+        transition: all 0.2s ease;
+        user-select: none;
+        z-index: 5;
+    }
+    .fc-arrow:hover { opacity: 0.75; transform: scale(1.05); }
+    .fc-arrow svg { width: 14px; height: 14px; flex-shrink: 0; }
+    .fc-arrow-left  { left: 0.9rem;  color: #dc3545; }
+    .fc-arrow-right { right: 0.9rem; color: #28a745; }
+
+    /* ── Подсказки свайпа снизу ── */
+    .fc-hints { display: flex; gap: 2.5rem; align-items: center; }
+    .fc-hint {
+        display: flex; flex-direction: column; align-items: center; gap: 0.4rem;
+        opacity: 0.4;
+    }
+    .fc-hint-icon {
+        width: 42px; height: 42px;
+        border-radius: 50%;
+        border: 1.5px solid currentColor;
+        background: #fff;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .fc-hint-icon svg { width: 16px; height: 16px; }
+    .fc-hint-label { font-size: 0.7rem; font-weight: 500; text-align: center; }
+    .fc-hint.wrong { color: #dc3545; }
+    .fc-hint.right  { color: #28a745; }
+
+    /* ── Пустое состояние ── */
+    .fc-empty { text-align: center; margin-top: 5rem; color: #6c757d; }
+    .fc-empty .icon { font-size: 3.5rem; margin-bottom: 1rem; }
+    .fc-empty h4 { color: #495057; margin-bottom: 0.5rem; }
+    .fc-empty p { font-size: 0.9rem; margin-bottom: 1.5rem; }
+
+    /* ── Экран завершения ── */
+    .fc-done {
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        margin-top: 2rem;
+    }
+    .fc-done .icon { font-size: 4rem; margin-bottom: 1rem; }
+    .fc-done h3 { color: #212529; margin-bottom: 0.5rem; }
+    .fc-done p { color: #6c757d; margin-bottom: 1.5rem; }
 </style>
 {% endblock %}
 
 {% block content %}
+<div class="fc-page">
 
-<div class="container">
-    <div class="mb-4">
-        <a href="{% url 'trainers_home' %}" class="btn btn-outline-secondary btn-lg">
-            ← Назад к выбору тренажёров
-        </a>
-    </div>
+    <a href="{% url 'trainers_home' %}" class="fc-back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 12H5M12 5l-7 7 7 7"/>
+        </svg>
+        Тренажёры
+    </a>
 
-    <div id="flashcard-container" class="flashcard-container">
-        <div id="card" class="flashcard">
-            <div class="card-face front">
-                <div class="mb-4">
-                    <button class="btn btn-outline-danger btn-lg audio-btn" onclick="playCurrent()">
-                        <i class="bi bi-play-fill fs-3"></i>
+    {% if cards_json %}
+
+        <div class="fc-counter">
+            Карточка <strong id="cur">1</strong> из <strong id="total">0</strong>
+        </div>
+
+        <div class="fc-stack" id="fc-stack">
+            <div class="fc-ghost"></div>
+            <div class="fc-ghost"></div>
+
+            <div class="fc-card-flipper" id="flipper">
+
+                <!-- Лицевая -->
+                <div class="fc-face fc-front-face">
+                    <button class="fc-audio-btn" id="audio-btn" title="Прослушать" onclick="playAudio(event)">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                     </button>
+                    <div class="fc-hanzi" id="hanzi"></div>
+                    <div class="fc-tap-hint">нажмите чтобы перевернуть</div>
                 </div>
-                <div id="front-hanzi" style="font-size: 8rem; font-weight: bold; color: #dc3545; font-family: SimHei, sans-serif;"></div>
-            </div>
-            <div class="card-face card-back back">
-                <div id="back-hanzi" style="font-size: 6rem; color: #dc3545;"></div>
-                <div id="pinyin" class="fs-3 text-muted mt-4"></div>
-                <div id="translate" class="fs-4 fw-bold mt-3"></div>
+
+                <!-- Обратная -->
+                <div class="fc-face fc-back-face">
+                    <div class="fc-arrow fc-arrow-left" onclick="doSwipe('left', event)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 12H5M12 5l-7 7 7 7"/>
+                        </svg>
+                        Не знал
+                    </div>
+                    <div class="fc-arrow fc-arrow-right" onclick="doSwipe('right', event)">
+                        Знал
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
+                    </div>
+                    <div class="fc-back-hanzi" id="back-hanzi"></div>
+                    <div class="fc-pinyin"     id="pinyin"></div>
+                    <div class="fc-translate"  id="translate-text"></div>
+                </div>
+
             </div>
         </div>
 
-        <!-- подсказки при свайпе -->
-        <div id="swipe-hint" class="hint-zone">
-            <div class="hint-left">Сюда → снова</div>
-            <div class="hint-right">→ Запомнил</div>
+        <div class="fc-hints">
+            <div class="fc-hint wrong">
+                <div class="fc-hint-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 12H5M12 5l-7 7 7 7"/>
+                    </svg>
+                </div>
+                <div class="fc-hint-label">Не знаю</div>
+            </div>
+            <div class="fc-hint right">
+                <div class="fc-hint-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                    </svg>
+                </div>
+                <div class="fc-hint-label">Знаю</div>
+            </div>
         </div>
-    </div>
+
+        <div class="fc-done" id="fc-done">
+            <div class="icon">🎉</div>
+            <h3>Отлично! Все карточки пройдены</h3>
+            <p>Вы справились со всеми карточками в этой сессии</p>
+            <button class="btn btn-danger px-4 me-2" onclick="restartSession()">Повторить ещё раз</button>
+            <a href="{% url 'trainers_home' %}" class="btn btn-outline-secondary px-4 mt-2">На главную</a>
+        </div>
+
+    {% else %}
+        <div class="fc-empty">
+            <div class="icon">📭</div>
+            <h4>Словарь пуст</h4>
+            <p>{% if debug_message %}{{ debug_message }}{% else %}Добавьте карточки в свой словарь{% endif %}</p>
+            <a href="{% url 'card_list' %}" class="btn btn-danger px-4">Перейти к карточкам</a>
+        </div>
+    {% endif %}
+
 </div>
 
 <script>
-const cards = {{ cards_json|safe }};
+const cards = JSON.parse('{{ cards_json|escapejs }}');
+let queue = [...cards];
 let currentIndex = 0;
-let queue = [...cards];  // рабочая очередь
+let isFlipped = false;
+let isSwiping = false;
 
+// ── Загрузка карточки ─────────────────────────────────────────
 function loadCard() {
-    if (queue.length === 0) {
-        alert("Карточки закончились в этой сессии!");
-        return;
-    }
-    const card = queue[currentIndex];
-    document.getElementById('front-hanzi').textContent = card.hieroglyph;
-    document.getElementById('back-hanzi').textContent = card.hieroglyph;
-    document.getElementById('pinyin').textContent = card.transcription;
-    document.getElementById('translate').textContent = card.translate;
+    if (queue.length === 0) { showDone(); return; }
 
-    // сбрасываем поворот
-    const fc = document.getElementById('card');
-    fc.classList.remove('flipped');
-    fc.classList.remove('swipe-left', 'swipe-right');
+    const idx  = currentIndex % queue.length;
+    const card = queue[idx];
+
+    document.getElementById('hanzi').textContent          = card.hieroglyph;
+    document.getElementById('back-hanzi').textContent     = card.hieroglyph;
+    document.getElementById('pinyin').textContent         = card.transcription;
+    document.getElementById('translate-text').textContent = card.translate;
+    document.getElementById('cur').textContent            = idx + 1;
+    document.getElementById('total').textContent          = queue.length;
+    document.getElementById('audio-btn').classList.remove('playing');
+
+    // сброс переворота без анимации
+    const flipper = document.getElementById('flipper');
+    flipper.style.transition = 'none';
+    flipper.style.transform  = '';
+    flipper.style.opacity    = '1';
+    flipper.classList.remove('flipped');
+    isFlipped = false;
+    requestAnimationFrame(() => { flipper.style.transition = ''; });
 }
 
-function playCurrent() {
-    const idx = currentIndex;
-    if (queue[idx]?.audio) {
-        new Audio(queue[idx].audio).play();
-    }
+// ── Аудио ─────────────────────────────────────────────────────
+function playAudio(e) {
+    e.stopPropagation();
+    const card = queue[currentIndex % queue.length];
+    if (!card?.audio) return;
+    const btn = document.getElementById('audio-btn');
+    btn.classList.add('playing');
+    const audio = new Audio(card.audio);
+    audio.play();
+    audio.onended = () => btn.classList.remove('playing');
+    audio.onerror  = () => btn.classList.remove('playing');
 }
 
-function nextCard() {
-    currentIndex = (currentIndex + 1) % queue.length;
+// ── Переворот по клику ────────────────────────────────────────
+document.getElementById('flipper').addEventListener('click', function(e) {
+    if (isSwiping || mouseMoved) return;
+    isFlipped = !isFlipped;
+    this.classList.toggle('flipped', isFlipped);
+});
+
+// ── Свайп ─────────────────────────────────────────────────────
+function doSwipe(direction, e) {
+    if (e) e.stopPropagation();
+    if (isSwiping) return;
+    isSwiping = true;
+
+    const flipper = document.getElementById('flipper');
+
+    // Анимация вылета через inline style (не конфликтует с flipped)
+    flipper.style.transition = 'transform 0.45s ease, opacity 0.45s ease';
+    if (direction === 'left') {
+        flipper.style.transform = isFlipped
+            ? 'rotateY(180deg) translateX(130%) rotate(15deg)'
+            : 'translateX(-130%) rotate(-15deg)';
+    } else {
+        flipper.style.transform = isFlipped
+            ? 'rotateY(180deg) translateX(-130%) rotate(-15deg)'
+            : 'translateX(130%) rotate(15deg)';
+    }
+    flipper.style.opacity = '0';
+
+    setTimeout(() => {
+        if (direction === 'right') {
+            // Знал → убираем из очереди
+            queue.splice(currentIndex % queue.length, 1);
+            if (queue.length > 0 && currentIndex >= queue.length) currentIndex = 0;
+        } else {
+            // Не знал → переходим к следующей
+            currentIndex = (currentIndex + 1) % queue.length;
+        }
+        isSwiping = false;
+        loadCard();
+    }, 450);
+}
+
+// ── Touch-свайпы (мобильные) ──────────────────────────────────
+let touchStartX = 0;
+let touchStartY = 0;
+
+document.getElementById('flipper').addEventListener('touchstart', e => {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+}, { passive: true });
+
+document.getElementById('flipper').addEventListener('touchend', e => {
+    if (isSwiping) return;
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    const dy = e.changedTouches[0].clientY - touchStartY;
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy)) {
+        doSwipe(dx > 0 ? 'right' : 'left');
+    }
+}, { passive: true });
+
+// ── Mouse-свайпы (ПК) ─────────────────────────────────────────
+let mouseStartX = 0;
+let mouseMoved = false;
+let isDragging = false;
+
+document.getElementById('flipper').addEventListener('mousedown', e => {
+    e.preventDefault();
+    mouseStartX = e.clientX;
+    mouseMoved = false;
+    isDragging = true;
+});
+
+document.addEventListener('mousemove', e => {
+    if (!isDragging) return;
+    if (Math.abs(e.clientX - mouseStartX) > 10) {
+        mouseMoved = true;
+    }
+});
+
+document.addEventListener('mouseup', e => {
+    if (!isDragging) return;
+    isDragging = false;
+    const dx = e.clientX - mouseStartX;
+    if (mouseMoved && Math.abs(dx) > 60) {
+        doSwipe(dx > 0 ? 'right' : 'left');
+    }
+});
+
+
+// ── Завершение сессии ─────────────────────────────────────────
+function showDone() {
+    document.getElementById('fc-stack').style.display          = 'none';
+    document.getElementById('fc-done').style.display           = 'flex';
+    document.querySelector('.fc-hints').style.display          = 'none';
+    document.querySelector('.fc-counter').style.display        = 'none';
+}
+
+function restartSession() {
+    queue = [...cards];
+    currentIndex = 0;
+    document.getElementById('fc-stack').style.display          = '';
+    document.getElementById('fc-done').style.display           = 'none';
+    document.querySelector('.fc-hints').style.display          = '';
+    document.querySelector('.fc-counter').style.display        = '';
     loadCard();
 }
 
-// ------------------- Свайпы -------------------
-let startX = 0;
-const container = document.getElementById('flashcard-container');
-
-container.addEventListener('touchstart', e => {
-    startX = e.touches[0].clientX;
-});
-
-container.addEventListener('touchend', e => {
-    const endX = e.changedTouches[0].clientX;
-    const diff = endX - startX;
-
-    const cardEl = document.getElementById('card');
-
-    if (Math.abs(diff) > 100) {
-        if (diff > 0) {
-            // ← свайп влево → снова показывать
-            cardEl.classList.add('swipe-left');
-            setTimeout(nextCard, 600);
-        } else {
-            // → свайп вправо → убираем из сессии
-            cardEl.classList.add('swipe-right');
-            queue.splice(currentIndex, 1);
-            if (queue.length === 0) {
-                setTimeout(() => alert("Отлично! Всё повторили в этой сессии."), 800);
-            } else {
-                setTimeout(nextCard, 600);
-            }
-        }
-    }
-});
-
-// переворот по клику
-document.getElementById('card').addEventListener('click', () => {
-    document.getElementById('card').classList.toggle('flipped');
-});
-
-loadCard(); // первый запуск
+loadCard();
 </script>
-
 {% endblock %}

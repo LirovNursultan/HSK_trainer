@@ -2,6 +2,8 @@ from django.urls import path
 from .views import create_card, card_list, edit_card, add_to_dictionary, MyDictionaryListView, MyDictCardDetailView,  MyDictionaryPDFView, toggle_learned, remove_from_dictionary
 from . import views
 
+
+
 urlpatterns = [
     path('', card_list, name='card_list'),
     path('create/', create_card, name='create_card'),
@@ -17,4 +19,6 @@ urlpatterns = [
     path('api/dictionary/remove/', remove_from_dictionary, name='remove_from_dictionary'),
     path('train/', views.trainers_home, name='trainers_home'),
     path('train/flashcards/', views.flashcards_session, name='flashcards_session'),
+
+
 ]
