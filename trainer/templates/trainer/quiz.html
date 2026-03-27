@@ -1,0 +1,841 @@
+{% extends '../base.html' %}
+
+{% block extra_head %}
+<style>
+    .navbar { display: none !important; }
+    body { background: #f8f9fa !important; }
+
+    /* ── Страница ── */
+    .qz-page {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 2rem 1rem 5rem;
+    }
+
+    /* ── Кнопка назад (стиль как в flashcards) ── */
+    .qz-back {
+        align-self: flex-start;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        color: #6c757d;
+        font-size: 0.8rem;
+        font-weight: 500;
+        text-decoration: none;
+        border: 1.5px solid #dee2e6;
+        padding: 0.5rem 1rem;
+        border-radius: 100px;
+        background: #fff;
+        transition: all 0.2s ease;
+        margin-bottom: 2.5rem;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    .qz-back:hover { color: #dc3545; border-color: #dc3545; background: #fff5f5; text-decoration: none; }
+    .qz-back svg { width: 15px; height: 15px; flex-shrink: 0; transition: transform 0.2s; }
+    .qz-back:hover svg { transform: translateX(-3px); }
+
+    /* ── Прогресс-бар ── */
+    .qz-progress-wrap {
+        width: 100%;
+        max-width: 560px;
+        margin-bottom: 0.6rem;
+    }
+    .qz-progress-bg {
+        height: 6px;
+        background: #e9ecef;
+        border-radius: 100px;
+        overflow: hidden;
+    }
+    .qz-progress-fill {
+        height: 100%;
+        background: #dc3545;
+        border-radius: 100px;
+        transition: width 0.4s ease;
+        width: 0%;
+    }
+    .qz-progress-label {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.75rem;
+        color: #adb5bd;
+        margin-top: 0.4rem;
+        margin-bottom: 1.5rem;
+    }
+    .qz-progress-label strong { color: #dc3545; }
+
+    /* ── Карточка вопроса ── */
+    .qz-card {
+        width: 100%;
+        max-width: 560px;
+        background: #fff;
+        border-radius: 20px;
+        border: none;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        padding: 2.5rem 2rem 2rem;
+        text-align: center;
+        margin-bottom: 1.5rem;
+        position: relative;
+    }
+    .qz-mode-badge {
+        position: absolute;
+        top: 1rem;
+        left: 1.2rem;
+        font-size: 0.65rem;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: #adb5bd;
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        padding: 0.25rem 0.7rem;
+        border-radius: 100px;
+    }
+    .qz-audio-btn {
+        position: absolute;
+        top: 0.9rem;
+        right: 1.1rem;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border: 1.5px solid #dee2e6;
+        background: #f8f9fa;
+        color: #adb5bd;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        padding: 0;
+    }
+    .qz-audio-btn:hover { color: #dc3545; border-color: #dc3545; background: #fff5f5; }
+    .qz-audio-btn svg { width: 13px; height: 13px; }
+
+    /* Иероглиф в вопросе */
+    .qz-hanzi {
+        font-family: 'SimHei', 'Microsoft YaHei', sans-serif;
+        font-size: 5rem;
+        font-weight: bold;
+        color: #212529;
+        line-height: 1;
+        margin-bottom: 0.4rem;
+    }
+    .qz-pinyin {
+        font-size: 1rem;
+        color: #6c757d;
+        font-style: italic;
+        margin-bottom: 0.3rem;
+    }
+    /* Перевод в вопросе */
+    .qz-translate-q {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #212529;
+    }
+    .qz-sub {
+        font-size: 0.78rem;
+        color: #adb5bd;
+        margin-top: 0.8rem;
+    }
+
+    /* ── Сетка вариантов ── */
+    .qz-options {
+        width: 100%;
+        max-width: 560px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+        margin-bottom: 1.2rem;
+    }
+    .qz-opt {
+        background: #fff;
+        border: 1.5px solid #dee2e6;
+        border-radius: 14px;
+        padding: 1.1rem 1rem;
+        color: #495057;
+        font-size: 0.95rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.18s ease;
+        text-align: center;
+        line-height: 1.4;
+        user-select: none;
+    }
+    .qz-opt:hover:not(.disabled) {
+        border-color: #dc3545;
+        color: #dc3545;
+        background: #fff5f5;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(220,53,69,0.12);
+    }
+    /* Иероглиф внутри варианта */
+    .qz-opt-hanzi {
+        font-family: 'SimHei', 'Microsoft YaHei', sans-serif;
+        font-size: 1.8rem;
+        font-weight: bold;
+        display: block;
+        margin-bottom: 0.2rem;
+        color: #dc3545;
+    }
+    .qz-opt-pinyin {
+        font-size: 0.7rem;
+        color: #adb5bd;
+        font-style: italic;
+    }
+
+    /* Состояния после ответа */
+    .qz-opt.correct {
+        border-color: #28a745;
+        background: #f0fff4;
+        color: #28a745;
+    }
+    .qz-opt.correct .qz-opt-hanzi { color: #28a745; }
+    .qz-opt.incorrect {
+        border-color: #dc3545;
+        background: #fff5f5;
+        color: #dc3545;
+    }
+    .qz-opt.dim { opacity: 0.35; }
+    .qz-opt.disabled { cursor: default; transform: none !important; box-shadow: none !important; }
+
+    /* ── Фидбэк ── */
+    .qz-feedback {
+        width: 100%;
+        max-width: 560px;
+        border-radius: 12px;
+        padding: 0.85rem 1.2rem;
+        font-size: 0.9rem;
+        font-weight: 600;
+        display: none;
+        align-items: center;
+        gap: 0.6rem;
+        margin-bottom: 1rem;
+    }
+    .qz-feedback.show { display: flex; }
+    .qz-feedback.ok  {
+        background: #f0fff4;
+        border: 1.5px solid #28a745;
+        color: #28a745;
+    }
+    .qz-feedback.bad {
+        background: #fff5f5;
+        border: 1.5px solid #dc3545;
+        color: #dc3545;
+    }
+    .qz-feedback svg { width: 18px; height: 18px; flex-shrink: 0; }
+    .qz-feedback-sub { font-size: 0.8rem; font-weight: 400; color: #6c757d; margin-top: 0.15rem; }
+
+    /* ── Кнопка Далее ── */
+    .qz-next {
+        width: 100%;
+        max-width: 560px;
+        padding: 0.85rem;
+        border-radius: 12px;
+        border: none;
+        background: #dc3545;
+        color: #fff;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        display: none;
+        transition: all 0.2s;
+        box-shadow: 0 4px 12px rgba(220,53,69,0.25);
+    }
+    .qz-next.show { display: block; }
+    .qz-next:hover { background: #c82333; transform: translateY(-1px); box-shadow: 0 6px 18px rgba(220,53,69,0.3); }
+
+    /* ── Статистика ── */
+    .qz-stats {
+        display: flex;
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+        font-size: 0.78rem;
+        color: #adb5bd;
+    }
+    .qz-stat { display: flex; align-items: center; gap: 0.35rem; }
+    .qz-stat-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .qz-stat-dot.green { background: #28a745; }
+    .qz-stat-dot.red   { background: #dc3545; }
+
+    /* ── Экран завершения ── */
+    .qz-done {
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        width: 100%;
+        max-width: 560px;
+    }
+    .qz-done-card {
+        background: #fff;
+        border-radius: 20px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        padding: 3rem 2rem;
+        width: 100%;
+        margin-bottom: 1rem;
+    }
+    .qz-done-emoji  { font-size: 3.5rem; margin-bottom: 0.8rem; }
+    .qz-done h3     { color: #212529; font-size: 1.4rem; margin-bottom: 0.4rem; }
+    .qz-done p      { color: #6c757d; font-size: 0.9rem; margin-bottom: 1.5rem; }
+    .qz-done-score  {
+        font-size: 3.5rem;
+        font-weight: 700;
+        color: #dc3545;
+        line-height: 1;
+        margin-bottom: 0.2rem;
+    }
+    .qz-done-score-label { font-size: 0.8rem; color: #adb5bd; margin-bottom: 2rem; }
+    .qz-done-row {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: center;
+    }
+    .qz-done-stat {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 1rem 1.2rem;
+        min-width: 90px;
+    }
+    .qz-done-stat h4    { margin: 0 0 0.2rem; font-size: 1.5rem; font-weight: 700; }
+    .qz-done-stat small { color: #adb5bd; font-size: 0.72rem; }
+
+    /* Кнопки завершения */
+    .qz-done-btns {
+        display: flex;
+        gap: 0.75rem;
+        width: 100%;
+    }
+    .qz-done-btns .qz-next {
+        flex: 1;
+        margin: 0;
+    }
+    .qz-done-btns .qz-btn-outline {
+        flex: 1;
+        padding: 0.85rem;
+        border-radius: 12px;
+        border: 1.5px solid #dee2e6;
+        background: #fff;
+        color: #6c757d;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .qz-done-btns .qz-btn-outline:hover { border-color: #adb5bd; color: #495057; }
+
+    /* ── Пустое состояние ── */
+    .qz-empty {
+        text-align: center;
+        margin-top: 4rem;
+        max-width: 400px;
+    }
+    .qz-empty .icon { font-size: 3.5rem; margin-bottom: 1rem; }
+    .qz-empty h4    { color: #495057; margin-bottom: 0.5rem; }
+    .qz-empty p     { color: #6c757d; font-size: 0.9rem; margin-bottom: 1.5rem; }
+
+    /* ── Переход между вопросами ── */
+    .qz-card.fade-out,
+    .qz-options.fade-out {
+        opacity: 0;
+        transform: translateY(-6px);
+        transition: opacity 0.18s ease, transform 0.18s ease;
+    }
+    /* ── Анимации вариантов ── */
+@keyframes qz-pop {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+@keyframes qz-shake {
+    0%, 100% { transform: translateX(0); }
+    20%       { transform: translateX(-7px); }
+    60%       { transform: translateX(7px); }
+}
+.qz-opt.correct   { animation: qz-pop   0.3s ease; }
+.qz-opt.incorrect { animation: qz-shake 0.35s ease; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="qz-page">
+
+    <!-- Кнопка назад -->
+    <a href="{% url 'trainers_home' %}" class="qz-back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+             stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 12H5M12 5l-7 7 7 7"/>
+        </svg>
+        Тренажёры
+    </a>
+
+    {% if cards_json and cards_json != '[]' %}
+
+        <!-- Прогресс -->
+        <div class="qz-progress-wrap">
+            <div class="qz-progress-bg">
+                <div class="qz-progress-fill" id="progress-fill"></div>
+            </div>
+            <div class="qz-progress-label">
+                <span id="progress-text">Вопрос 1</span>
+                <span><strong id="correct-count">0</strong> / <span id="total-count">0</span></span>
+            </div>
+        </div>
+
+        <!-- Статистика -->
+        <div class="qz-stats">
+            <div class="qz-stat">
+                <div class="qz-stat-dot green"></div>
+                <span id="stat-correct">0 правильных</span>
+            </div>
+            <div class="qz-stat">
+                <div class="qz-stat-dot red"></div>
+                <span id="stat-incorrect">0 ошибок</span>
+            </div>
+        </div>
+
+        <!-- Карточка вопроса -->
+        <div class="qz-card" id="qz-card">
+            <span class="qz-mode-badge" id="mode-badge"></span>
+            <button class="qz-audio-btn" id="audio-btn" onclick="playCurrentAudio(event)" style="display:none;">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <polygon points="5 3 19 12 5 21 5 3"/>
+                </svg>
+            </button>
+            <div id="question-content">
+                <!-- JS заполняет сюда -->
+            </div>
+        </div>
+
+        <!-- Варианты ответа -->
+        <div class="qz-options" id="qz-options">
+            <!-- JS заполняет сюда -->
+        </div>
+
+        <!-- Фидбэк -->
+        <div class="qz-feedback" id="qz-feedback">
+            <svg id="fb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></svg>
+            <div>
+                <div id="fb-text"></div>
+                <div class="qz-feedback-sub" id="fb-sub"></div>
+            </div>
+        </div>
+
+        <!-- Кнопка далее -->
+        <button class="qz-next" id="qz-next" onclick="nextQuestion()">
+            Далее →
+        </button>
+
+        <!-- Экран завершения -->
+        <div class="qz-done" id="qz-done">
+            <div class="qz-done-card">
+                <div class="qz-done-emoji" id="done-emoji"></div>
+                <h3 id="done-title"></h3>
+                <p id="done-subtitle"></p>
+                <div class="qz-done-score" id="done-score"></div>
+                <div class="qz-done-score-label">точность ответов</div>
+                <div class="qz-done-row">
+                    <div class="qz-done-stat">
+                        <h4 style="color:#28a745" id="done-correct">0</h4>
+                        <small>Правильных</small>
+                    </div>
+                    <div class="qz-done-stat">
+                        <h4 style="color:#dc3545" id="done-incorrect">0</h4>
+                        <small>Ошибок</small>
+                    </div>
+                    <div class="qz-done-stat">
+                        <h4 style="color:#6c757d" id="done-total">0</h4>
+                        <small>Всего</small>
+                    </div>
+                </div>
+            </div>
+            <div class="qz-done-btns">
+                <button class="qz-next show" onclick="restartSession()">Повторить</button>
+                <a href="{% url 'trainers_home' %}" class="qz-btn-outline">На главную</a>
+            </div>
+        </div>
+
+    {% else %}
+
+        <!-- Пустое состояние -->
+        <div class="qz-empty">
+            <div class="icon">📭</div>
+            {% if not_enough %}
+                <h4>Мало карточек в словаре</h4>
+                <p>
+                    У вас {{ user_cards_count }} из 4 необходимых карточек.
+                    Добавьте ещё, чтобы начать тренировку!
+                </p>
+            {% else %}
+                <h4>Словарь пуст</h4>
+                <p>Добавьте карточки в свой словарь, чтобы начать тренировку.</p>
+            {% endif %}
+            <a href="{% url 'card_list' %}" class="qz-next show" style="text-decoration:none; display:inline-block; max-width:260px;">
+                Перейти к карточкам
+            </a>
+        </div>
+
+    {% endif %}
+
+</div>
+
+<script>
+    // Данные из Django — JS логика будет добавлена в задачах 4, 5, 6, 7
+    const USER_CARDS   = JSON.parse('{{ cards_json|escapejs }}');
+    const ALL_CARDS    = JSON.parse('{{ all_cards_json|escapejs }}');
+    const SESSION_SIZE = {{ session_size|default:0 }};
+    const OPTIONS_COUNT = {{ options_count|default:4 }};
+
+    // ── Состояние сессии ──────────────────────────────────
+let sessionCards  = [];   // перемешанные карточки на сессию
+let currentIdx    = 0;    // индекс текущего вопроса
+let correctCount  = 0;    // правильных ответов
+let incorrectCount = 0;   // неправильных ответов
+let answered      = false; // заблокировать повторный клик
+let currentQuestion = null; // текущий сгенерированный вопрос
+ 
+// ── Утилита: перемешать массив (Fisher-Yates) ─────────
+function shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
+ 
+// ── Подготовка сессии ─────────────────────────────────
+function initSession() {
+    // Берём случайные SESSION_SIZE карточек из словаря пользователя
+    sessionCards  = shuffle(USER_CARDS).slice(0, SESSION_SIZE);
+    currentIdx    = 0;
+    correctCount  = 0;
+    incorrectCount = 0;
+    answered      = false;
+}
+ 
+// ── Генерация одного вопроса ──────────────────────────
+function generateQuestion(card) {
+    // Случайный режим:
+    //   mode 0 → показываем иероглиф + пиньинь, угадываем ПЕРЕВОД
+    //   mode 1 → показываем перевод, угадываем ИЕРОГЛИФ
+    const mode = Math.floor(Math.random() * 2);
+ 
+    // Берём ложные варианты из ВСЕЙ базы (исключаем текущую карточку)
+    const pool = ALL_CARDS.filter(c => c.id !== card.id);
+ 
+    // Нужно OPTIONS_COUNT - 1 ложных вариантов
+    const distractors = shuffle(pool).slice(0, OPTIONS_COUNT - 1);
+ 
+    if (mode === 0) {
+        // Варианты = переводы
+        const options = shuffle([
+            { label: card.translate, isCorrect: true },
+            ...distractors.map(d => ({ label: d.translate, isCorrect: false }))
+        ]);
+        return {
+            mode,
+            card,
+            options,
+            correctLabel: card.translate,
+        };
+    } else {
+        // Варианты = иероглифы + пиньинь
+        const options = shuffle([
+            { hieroglyph: card.hieroglyph, pinyin: card.transcription, isCorrect: true },
+            ...distractors.map(d => ({ hieroglyph: d.hieroglyph, pinyin: d.transcription, isCorrect: false }))
+        ]);
+        return {
+            mode,
+            card,
+            options,
+            correctLabel: card.hieroglyph,
+        };
+    }
+}
+ 
+// ── Рендер вопроса в DOM ──────────────────────────────
+function renderQuestion() {
+    if (currentIdx >= sessionCards.length) {
+        showDone();
+        return;
+    }
+ 
+    answered = false;
+    const card = sessionCards[currentIdx];
+    currentQuestion = generateQuestion(card);
+ 
+    // Прогресс
+    updateProgress();
+ 
+    // Режим-бейдж
+    document.getElementById('mode-badge').textContent =
+        currentQuestion.mode === 0
+            ? 'Иероглиф → Перевод'
+            : 'Перевод → Иероглиф';
+ 
+    // Кнопка аудио
+    const audioBtn = document.getElementById('audio-btn');
+    audioBtn.style.display = card.audio ? 'flex' : 'none';
+ 
+    // Контент вопроса
+    const qContent = document.getElementById('question-content');
+    if (currentQuestion.mode === 0) {
+        // Показываем иероглиф
+        qContent.innerHTML = `
+            <div class="qz-hanzi">${card.hieroglyph}</div>
+            <div class="qz-pinyin">${card.transcription}</div>
+            <div class="qz-sub">Выберите правильный перевод</div>
+        `;
+    } else {
+        // Показываем перевод
+        qContent.innerHTML = `
+            <div class="qz-translate-q">${card.translate}</div>
+            <div class="qz-sub">Выберите правильный иероглиф</div>
+        `;
+    }
+ 
+    // Варианты ответа
+    const optContainer = document.getElementById('qz-options');
+    optContainer.innerHTML = '';
+ 
+    // Если вариантов много (6-7) — делаем 3 колонки на десктопе
+    optContainer.style.gridTemplateColumns = OPTIONS_COUNT >= 6 ? '1fr 1fr 1fr' : '1fr 1fr';
+ 
+    currentQuestion.options.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.className = 'qz-opt';
+        btn.dataset.correct = opt.isCorrect ? '1' : '0';
+ 
+        if (currentQuestion.mode === 0) {
+            // Текстовый вариант (перевод)
+            btn.innerHTML = `<span>${opt.label}</span>`;
+        } else {
+            // Иероглиф + пиньинь
+            btn.innerHTML = `
+                <span class="qz-opt-hanzi">${opt.hieroglyph}</span>
+                <span class="qz-opt-pinyin">${opt.pinyin}</span>
+            `;
+        }
+ 
+        // Обработчик будет добавлен в Задаче 5
+        btn.addEventListener('click', () => handleAnswer(btn, opt));
+        optContainer.appendChild(btn);
+    });
+ 
+    // Скрываем фидбэк и кнопку «Далее»
+    document.getElementById('qz-feedback').className = 'qz-feedback';
+    document.getElementById('qz-next').classList.remove('show');
+}
+ 
+// ── Обновление прогресса ──────────────────────────────
+function updateProgress() {
+    const pct = (currentIdx / sessionCards.length) * 100;
+    document.getElementById('progress-fill').style.width = pct + '%';
+    document.getElementById('progress-text').textContent =
+        `Вопрос ${currentIdx + 1} из ${sessionCards.length}`;
+    document.getElementById('correct-count').textContent  = correctCount;
+    document.getElementById('total-count').textContent    = sessionCards.length;
+}
+ 
+// ── Воспроизведение аудио текущей карточки ────────────
+function playCurrentAudio(e) {
+    e.stopPropagation();
+    const card = sessionCards[currentIdx];
+    if (!card?.audio) return;
+    new Audio(card.audio).play().catch(() => {});
+}
+ 
+
+ 
+// ── CSRF токен ────────────────────────────────────────
+function getCookie(name) {
+    let value = null;
+    if (document.cookie) {
+        document.cookie.split(';').forEach(c => {
+            c = c.trim();
+            if (c.startsWith(name + '=')) {
+                value = decodeURIComponent(c.slice(name.length + 1));
+            }
+        });
+    }
+    return value;
+}
+
+// ── Отправка результата на сервер ─────────────────────
+function sendResult(cardId, result) {
+    fetch('/api/dictionary/mark-result/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: JSON.stringify({ card_id: cardId, result: result }),
+    }).catch(() => {});
+}
+
+// ── Обработка клика по варианту ───────────────────────
+function handleAnswer(btn, opt) {
+    if (answered) return;
+    answered = true;
+
+    const allBtns = document.querySelectorAll('.qz-opt');
+    allBtns.forEach(b => b.classList.add('disabled'));
+
+    const cardId = currentQuestion.card.id;
+
+    if (opt.isCorrect) {
+        btn.classList.add('correct');
+        allBtns.forEach(b => { if (b !== btn) b.classList.add('dim'); });
+        correctCount++;
+        showFeedback(true, null);
+        sendResult(cardId, 'correct');
+    } else {
+        btn.classList.add('incorrect');
+        allBtns.forEach(b => {
+            if (b.dataset.correct === '1') b.classList.add('correct');
+            else if (b !== btn) b.classList.add('dim');
+        });
+        incorrectCount++;
+        showFeedback(false, currentQuestion.correctLabel);
+        sendResult(cardId, 'incorrect');
+    }
+
+    updateStats();
+    document.getElementById('qz-next').classList.add('show');
+}
+ 
+// ── Показ фидбэка ─────────────────────────────────────
+function showFeedback(isCorrect, correctLabel) {
+    const fb      = document.getElementById('qz-feedback');
+    const icon    = document.getElementById('fb-icon');
+    const text    = document.getElementById('fb-text');
+    const sub     = document.getElementById('fb-sub');
+ 
+    if (isCorrect) {
+        fb.className = 'qz-feedback show ok';
+        icon.innerHTML = '<polyline points="20 6 9 17 4 12"/>';
+        text.textContent = 'Правильно!';
+        sub.textContent  = '';
+    } else {
+        fb.className = 'qz-feedback show bad';
+        icon.innerHTML = '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>';
+        text.textContent = 'Неправильно';
+        sub.textContent  = `Правильный ответ: ${correctLabel}`;
+    }
+}
+ 
+// ── Обновление счётчиков ──────────────────────────────
+function updateStats() {
+    document.getElementById('stat-correct').textContent   = `${correctCount} правильных`;
+    document.getElementById('stat-incorrect').textContent = `${incorrectCount} ошибок`;
+    document.getElementById('correct-count').textContent  = correctCount;
+
+    // Красим счётчик ошибок если их больше чем правильных
+    const statIncorrectEl = document.getElementById('stat-incorrect');
+    if (incorrectCount > correctCount) {
+        statIncorrectEl.style.color      = '#dc3545';
+        statIncorrectEl.style.fontWeight = '600';
+    } else {
+        statIncorrectEl.style.color      = '';
+        statIncorrectEl.style.fontWeight = '';
+    }
+}
+ 
+// ── Переход к следующему вопросу ──────────────────────
+function nextQuestion() {
+    const card = document.getElementById('qz-card');
+    const opts = document.getElementById('qz-options');
+    const fb   = document.getElementById('qz-feedback');
+ 
+    // Анимация исчезновения
+    card.classList.add('fade-out');
+    opts.classList.add('fade-out');
+    fb.className = 'qz-feedback'; // скрываем фидбэк
+    document.getElementById('qz-next').classList.remove('show');
+ 
+    setTimeout(() => {
+        card.classList.remove('fade-out');
+        opts.classList.remove('fade-out');
+        currentIdx++;
+        renderQuestion();
+    }, 180);
+}
+ 
+// ── Экран завершения ──────────────────────────────────
+function showDone() {
+    // Скрываем игровые элементы
+    document.getElementById('qz-card').style.display          = 'none';
+    document.getElementById('qz-options').style.display       = 'none';
+    document.getElementById('qz-feedback').style.display      = 'none';
+    document.getElementById('qz-next').style.display          = 'none';
+    document.querySelector('.qz-progress-wrap').style.display = 'none';
+    document.querySelector('.qz-stats').style.display         = 'none';
+
+    // Считаем итоги
+    const total = correctCount + incorrectCount;
+    const pct   = total > 0 ? Math.round((correctCount / total) * 100) : 0;
+
+    // Эмодзи и заголовок по проценту
+    let emoji, title, subtitle;
+    if (pct >= 90) {
+        emoji    = '🎉';
+        title    = 'Отлично!';
+        subtitle = 'Вы превосходно знаете эти слова';
+    } else if (pct >= 70) {
+        emoji    = '🔥';
+        title    = 'Очень хорошо!';
+        subtitle = 'Ещё немного практики — и будет идеально';
+    } else if (pct >= 50) {
+        emoji    = '💪';
+        title    = 'Хороший результат!';
+        subtitle = 'Продолжайте практиковаться';
+    } else {
+        emoji    = '😅';
+        title    = 'Нужно больше практики';
+        subtitle = 'Повторите слова и попробуйте снова';
+    }
+
+    // Заполняем экран завершения
+    document.getElementById('done-emoji').textContent     = emoji;
+    document.getElementById('done-title').textContent     = title;
+    document.getElementById('done-subtitle').textContent  = subtitle;
+    document.getElementById('done-score').textContent     = pct + '%';
+    document.getElementById('done-correct').textContent   = correctCount;
+    document.getElementById('done-incorrect').textContent = incorrectCount;
+    document.getElementById('done-total').textContent     = total;
+
+    // Показываем экран завершения
+    document.getElementById('qz-done').style.display = 'flex';
+}
+
+// ── Перезапуск сессии ─────────────────────────────────
+function restartSession() {
+    // Возвращаем игровые элементы
+    document.getElementById('qz-card').style.display          = '';
+    document.getElementById('qz-options').style.display       = '';
+    document.getElementById('qz-feedback').style.display      = '';
+    document.querySelector('.qz-progress-wrap').style.display = '';
+    document.querySelector('.qz-stats').style.display         = '';
+
+    // Скрываем экран завершения
+    document.getElementById('qz-done').style.display = 'none';
+
+    // Сбрасываем и запускаем заново
+    initSession();
+    renderQuestion();
+}
+ 
+// ── Старт ─────────────────────────────────────────────
+if (USER_CARDS.length > 0) {
+    initSession();
+    renderQuestion();
+}
+
+</script>
+{% endblock %}

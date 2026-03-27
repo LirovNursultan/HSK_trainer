@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import create_card, card_list, edit_card, add_to_dictionary, MyDictionaryListView, MyDictCardDetailView,  MyDictionaryPDFView, toggle_learned, remove_from_dictionary
+from .views import create_card, card_list, edit_card, add_to_dictionary, MyDictionaryListView, MyDictCardDetailView,  MyDictionaryPDFView, toggle_learned, remove_from_dictionary, mark_result
 from . import views
 
 
@@ -20,5 +20,6 @@ urlpatterns = [
     path('train/', views.trainers_home, name='trainers_home'),
     path('train/flashcards/', views.flashcards_session, name='flashcards_session'),
 
-
+    path('train/quiz/', views.quiz_session, name='quiz_session'),
+    path('api/dictionary/mark-result/', mark_result, name='mark_result'),
 ]

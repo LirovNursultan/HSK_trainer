@@ -5,7 +5,7 @@
     <h1 class="mb-5" style="color: #dc3545;">Выберите тренажёр</h1>
 
     <div class="row g-4 justify-content-center">
-        <!-- Блок флэш-карт (пока только один) -->
+        <!-- Блок флэш-карт -->
         <div class="col-md-5 col-lg-4">
             <a href="{% url 'flashcards_session' %}" class="text-decoration-none">
                 <div class="card trainer-card shadow-lg border-0 h-100 hover-lift">
@@ -13,6 +13,22 @@
                         <div class="display-1 mb-4" style="font-size: 6rem; color: #dc3545;">闪</div>
                         <h3 class="fw-bold mb-3">Флэш-карты</h3>
                         <p class="text-muted lead">Классическое повторение свайпами</p>
+                        <div class="mt-auto">
+                            <span class="btn btn-outline-danger btn-lg px-5">Начать</span>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Блок выбора ответа -->
+        <div class="col-md-5 col-lg-4">
+            <a href="{% url 'quiz_session' %}" class="text-decoration-none">
+                <div class="card trainer-card shadow-lg border-0 h-100 hover-lift">
+                    <div class="card-body d-flex flex-column justify-content-center p-5">
+                        <div class="display-1 mb-4" style="font-size: 6rem; color: #dc3545;">选</div>
+                        <h3 class="fw-bold mb-3">Выбор ответа</h3>
+                        <p class="text-muted lead">Выбери правильный перевод из вариантов</p>
                         <div class="mt-auto">
                             <span class="btn btn-outline-danger btn-lg px-5">Начать</span>
                         </div>

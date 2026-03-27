@@ -16,6 +16,125 @@ import json
 from .models import Card, MyDictionary, DictionaryCard
 
 
+@login_required
+@require_POST
+def mark_result(request):
+    """
+    Записывает результат ответа пользователя по карточке.
+    Обновляет: times_correct / times_incorrect / times_viewed / last_viewed
+ 
+    POST body: { "card_id": int, "result": "correct" | "incorrect" }
+    """
+    try:
+        data    = json.loads(request.body)
+        card_id = data.get('card_id')
+        result  = data.get('result')
+ 
+        if not card_id or result not in ('correct', 'incorrect'):
+            return JsonResponse(
+                {'success': False, 'message': 'Неверные параметры'},
+                status=400
+            )
+ 
+        user_dictionary = MyDictionary.objects.get(user=request.user)
+        entry = DictionaryCard.objects.get(
+            dictionary=user_dictionary,
+            card_id=card_id
+        )
+ 
+        if result == 'correct':
+            entry.mark_correct()    # times_correct++, times_viewed++, last_viewed=now
+        else:
+            entry.mark_incorrect()  # times_incorrect++, times_viewed++, last_viewed=now
+ 
+        return JsonResponse({
+            'success':         True,
+            'times_correct':   entry.times_correct,
+            'times_incorrect': entry.times_incorrect,
+            'times_viewed':    entry.times_viewed,
+        })
+ 
+    except (MyDictionary.DoesNotExist, DictionaryCard.DoesNotExist):
+        return JsonResponse(
+            {'success': False, 'message': 'Запись не найдена'},
+            status=404
+        )
+    except Exception as e:
+        return JsonResponse(
+            {'success': False, 'message': str(e)},
+            status=500
+        )
+    
+# Для выборки
+@login_required
+def quiz_session(request):
+    """
+    Тренажёр «Выбор ответа».
+    - Вопросы берутся из личного словаря пользователя
+    - Ложные варианты — из всей базы Card
+    - Количество вопросов = min(кол-во карточек в словаре, 15)
+    - Количество вариантов ответа = от 4 до 7 (зависит от размера базы)
+    """
+    try:
+        user_dict = request.user.dictionary
+    except MyDictionary.DoesNotExist:
+        user_dict = MyDictionary.objects.create(user=request.user)
+ 
+    user_cards = list(user_dict.cards.all())
+ 
+    # Нужно минимум 4 карточки в словаре
+    if len(user_cards) < 4:
+        return render(request, 'trainer/quiz.html', {
+            'cards_json':     '[]',
+            'all_cards_json': '[]',
+            'not_enough': True,
+            'user_cards_count': len(user_cards),
+        })
+ 
+    def card_to_dict(card):
+        audio_url = None
+        if card.audio:
+            audio_url = request.build_absolute_uri(card.audio.url)
+        return {
+            'id':            card.id,
+            'hieroglyph':    card.hieroglyph,
+            'transcription': card.transcription,
+            'translate':     card.translate,
+            'audio':         audio_url,
+        }
+ 
+    # Карточки пользователя — источник вопросов
+    # Количество вопросов за сессию: min(кол-во карточек, 15)
+    session_size = min(len(user_cards), 15)
+    user_card_data = [card_to_dict(c) for c in user_cards]
+ 
+    # Все карточки из базы — источник ложных вариантов
+    all_cards = Card.objects.all()
+    all_card_data = [card_to_dict(c) for c in all_cards]
+ 
+    # Количество вариантов ответа зависит от размера базы:
+    # база < 4  → недостаточно (уже обработано выше)
+    # база 4-5  → 4 варианта
+    # база 6-8  → 5 вариантов
+    # база 9-12 → 6 вариантов
+    # база 13+  → 7 вариантов
+    total_in_db = len(all_card_data)
+    if total_in_db <= 5:
+        options_count = 4
+    elif total_in_db <= 8:
+        options_count = 5
+    elif total_in_db <= 12:
+        options_count = 6
+    else:
+        options_count = 7
+ 
+    return render(request, 'trainer/quiz.html', {
+        'cards_json':     json.dumps(user_card_data),
+        'all_cards_json': json.dumps(all_card_data),
+        'session_size':   session_size,
+        'options_count':  options_count,
+    })
+
 # Для флэш карточек
 def trainers_home(request):
     return render(request, 'trainer/trainers_home.html')
