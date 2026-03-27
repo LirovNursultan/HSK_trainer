@@ -14,6 +14,7 @@ from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
 import json
 from .models import Card, MyDictionary, DictionaryCard
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 
 @login_required
@@ -216,29 +217,30 @@ class MyDictionaryPDFView(LoginRequiredMixin, View):
         else:
             return HttpResponse("Ошибка генерации PDF", status=500)
         
-
 def card_list(request):
     cards = Card.objects.all()
     
+    paginator = Paginator(cards, 20)
+    page_number = request.GET.get('page', 1)
+    
+    try:
+        page_obj = paginator.page(page_number)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(1)
+    
+    context = {'page_obj': page_obj}
+    
     if request.user.is_authenticated:
         user_dict = request.user.dictionary
-        
-        # Собираем set ID карточек, которые уже в словаре пользователя
         in_dict_ids = set(
             DictionaryCard.objects.filter(dictionary=user_dict)
-                                 .values_list('card_id', flat=True)
+                                  .values_list('card_id', flat=True)
         )
-        
-        # Передаём в шаблон дополнительный контекст
-        context = {
-            'cards': cards,
-            'in_dict_ids': in_dict_ids,   # set с ID
-        }
-    else:
-        context = {'cards': cards}
+        context['in_dict_ids'] = in_dict_ids
     
-    return render(request, 'trainer/card_list.html', context)  
-
+    return render(request, 'trainer/card_list.html', context)
 
 def create_card(request):
     if request.method == 'POST':
