@@ -118,9 +118,9 @@
                                 {% if card.dict_entry.times_viewed > 0 %}
                                     <div class="progress" style="height: 20px;">
                                         <div class="progress-bar {% if card.accuracy >= 80 %}bg-success{% elif card.accuracy >= 50 %}bg-warning{% else %}bg-danger{% endif %}" 
-                                             style="width: {{ card.accuracy }}%" 
-                                             role="progressbar">
-                                            {{ card.accuracy }}%
+                                            style="width: {{ card.accuracy|floatformat:0 }}%" 
+                                            role="progressbar">
+                                            {{ card.accuracy|floatformat:0 }}%
                                         </div>
                                     </div>
                                 {% else %}

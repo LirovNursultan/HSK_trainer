@@ -3,7 +3,7 @@ from .forms import CardForm
 from .models import Card
 from django.http import HttpResponse
 from django.template.loader import render_to_string
-from xhtml2pdf import pisa
+from weasyprint import HTML
 from io import BytesIO
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views import View
@@ -124,10 +124,8 @@ def quiz_session(request):
         options_count = 4
     elif total_in_db <= 8:
         options_count = 5
-    elif total_in_db <= 12:
-        options_count = 6
     else:
-        options_count = 7
+        options_count = 6
  
     return render(request, 'trainer/quiz.html', {
         'cards_json':     json.dumps(user_card_data),
@@ -187,7 +185,6 @@ def flashcards_session(request):
 
 class MyDictionaryPDFView(LoginRequiredMixin, View):
     def get(self, request):
-        # Дублируем логику из MyDictionaryListView (без фильтров/поиска/сортировки для простоты)
         user_dictionary = request.user.dictionary
         cards = user_dictionary.cards.all()
 
@@ -207,15 +204,13 @@ class MyDictionaryPDFView(LoginRequiredMixin, View):
 
         html_string = render_to_string('trainer/my_dictionary_pdf.html', context)
 
-        result = BytesIO()
-        pdf = pisa.pisaDocument(BytesIO(html_string.encode("UTF-8")), result)
+        # Генерация PDF
+        html = HTML(string=html_string, base_url=request.build_absolute_uri('/'))
+        pdf = html.write_pdf()
 
-        if not pdf.err:
-            response = HttpResponse(result.getvalue(), content_type='application/pdf')
-            response['Content-Disposition'] = f'attachment; filename="my_dictionary_{date.today()}.pdf"'
-            return response
-        else:
-            return HttpResponse("Ошибка генерации PDF", status=500)
+        response = HttpResponse(pdf, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="my_dictionary_{date.today()}.pdf"'
+        return response
         
 def card_list(request):
     cards = Card.objects.all()

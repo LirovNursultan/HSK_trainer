@@ -4,103 +4,88 @@
     <meta charset="UTF-8">
     <title>Мой словарь - HSK Cards</title>
     <style>
+        @font-face {
+            font-family: 'NotoSansSC';
+            src: url('C:/Users/Nursultan/Desktop/HSK_train/static/fonts/NotoSansSC-Regular.ttf');
+        }
+
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'NotoSansSC', Arial, sans-serif;
             color: #333;
-            background: white;
             margin: 40px;
+            font-size: 11pt;
         }
+
         h1 {
-            color: #dc3545; /* красный */
+            color: #dc3545;
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 35px;
         }
+
         .stats {
             display: flex;
             justify-content: space-around;
-            margin-bottom: 40px;
+            margin-bottom: 45px;
+        }
+
+        .stat-card {
+            background: #f8f9fa;
+            padding: 18px;
+            border-radius: 10px;
+            width: 30%;
             text-align: center;
         }
-        .stat-card {
-            background: #f8f9fa; /* светло-серый */
-            padding: 15px;
-            border-radius: 8px;
-            width: 30%;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
+
         .stat-card h6 {
-            color: #6c757d; /* серый */
-            margin-bottom: 10px;
+            color: #6c757d;
+            margin-bottom: 8px;
         }
+
         .stat-card h3 {
             margin: 0;
+            font-size: 2rem;
         }
-        .total { color: #dc3545; }     /* красный */
-        .learned { color: #28a745; }   /* зелёный */
-        .not-learned { color: #ffc107; } /* жёлтый */
+
+        .total { color: #dc3545; }
+        .learned { color: #28a745; }
+        .not-learned { color: #ffc107; }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
-            background: white;
+            margin-top: 25px;
         }
+
         th {
-            background: #e9ecef; /* серый фон заголовка */
-            color: #495057;
-            padding: 12px;
+            background: #e9ecef;
+            padding: 14px 12px;
             text-align: left;
-            border-bottom: 2px solid #dee2e6;
+            font-weight: 600;
+            color: #495057;
         }
+
         td {
-            padding: 12px;
+            padding: 14px 12px;
             border-bottom: 1px solid #dee2e6;
         }
+
         .hieroglyph {
-            font-family: 'SimHei', 'Microsoft YaHei', 'KaiTi', sans-serif;
-            font-size: 2rem;
+            font-family: 'NotoSansSC', sans-serif !important;
+            font-size: 3rem;
             font-weight: bold;
-            color: #dc3545; /* красный */
+            color: #dc3545;
+            line-height: 1;
         }
+
         .transcription {
             color: #6c757d;
             font-style: italic;
-        }
-        .accuracy-bar {
-            display: inline-block;
-            width: 80px;
-            height: 20px;
-            background: #e9ecef;
-            border-radius: 4px;
-            overflow: hidden;
-            vertical-align: middle;
-        }
-        .accuracy-fill {
-            height: 100%;
-            display: block;
-        }
-        .accuracy-fill.high { background: #28a745; }    /* ≥80% зелёный */
-        .accuracy-fill.medium { background: #ffc107; } /* 50–79% жёлтый */
-        .accuracy-fill.low { background: #dc3545; }    /* <50% красный */
-        .no-data {
-            color: #6c757d;
-            font-style: italic;
-        }
-        .empty-message {
-            text-align: center;
-            font-size: 1.2rem;
-            color: #6c757d;
-            margin-top: 50px;
-        }
-        .page-break {
-            page-break-after: always;
         }
     </style>
 </head>
 <body>
     <h1>Мой словарь HSK</h1>
 
-    <!-- Статистика -->
     <div class="stats">
         <div class="stat-card">
             <h6>Всего карточек</h6>
@@ -139,13 +124,9 @@
                         </td>
                         <td>
                             {% if card.dict_entry.times_viewed > 0 %}
-                                <span class="accuracy-bar">
-                                    <span class="accuracy-fill {% if card.accuracy >= 80 %}high{% elif card.accuracy >= 50 %}medium{% else %}low{% endif %}"
-                                          style="width: {{ card.accuracy }}%;"></span>
-                                </span>
                                 <strong>{{ card.accuracy }}%</strong>
                             {% else %}
-                                <span class="no-data">Нет данных</span>
+                                <span style="color:#6c757d;">Нет данных</span>
                             {% endif %}
                         </td>
                     </tr>
@@ -153,9 +134,9 @@
             </tbody>
         </table>
     {% else %}
-        <div class="empty-message">
+        <p style="text-align:center; font-size:1.3rem; color:#6c757d; margin-top:80px;">
             Ваш словарь пуст.
-        </div>
+        </p>
     {% endif %}
 </body>
 </html>

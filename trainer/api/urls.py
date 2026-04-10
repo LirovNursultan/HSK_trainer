@@ -1,11 +1,9 @@
 from rest_framework.routers import DefaultRouter
-
-from trainer.api import views
-
+from .views import CardViewSet, MyDictionaryViewSet
 
 router = DefaultRouter()
-router.register(r'cards', views.CardViewSet)
-router.register(r'dictionary-cards', views.DictionaryCardViewSet)
-router.register(r'my-dictionary', views.MyDictionaryViewSet)
+
+router.register(r'cards', CardViewSet, basename='cards')
+router.register(r'my-dictionary', MyDictionaryViewSet, basename='my-dictionary')
 
 urlpatterns = router.urls

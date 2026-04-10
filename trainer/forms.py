@@ -6,3 +6,7 @@ class CardForm(forms.ModelForm):
     class Meta:
         model = Card
         fields = ['hieroglyph', 'translate', 'transcription', 'audio']
+
+
+
+
