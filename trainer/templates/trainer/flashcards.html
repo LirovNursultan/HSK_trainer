@@ -28,18 +28,52 @@
         border-radius: 100px;
         background: #fff;
         transition: all 0.2s ease;
-        margin-bottom: 2.5rem;
+        margin-bottom: 2rem;
         box-shadow: 0 1px 4px rgba(0,0,0,0.06);
     }
     .fc-back:hover { color: #dc3545; border-color: #dc3545; background: #fff5f5; text-decoration: none; }
     .fc-back svg { width: 15px; height: 15px; flex-shrink: 0; transition: transform 0.2s; }
     .fc-back:hover svg { transform: translateX(-3px); }
 
-    /* ── Счётчик ── */
+    /* ── Статистика словаря ── */
+    .fc-dict-stats {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        width: 100%;
+        max-width: 360px;
+    }
+    .fc-dict-stat {
+        flex: 1;
+        background: #fff;
+        border-radius: 12px;
+        padding: 0.75rem 0.5rem;
+        text-align: center;
+        box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+        border: 1.5px solid #e9ecef;
+    }
+    .fc-dict-stat .val {
+        font-size: 1.5rem;
+        font-weight: 700;
+        line-height: 1;
+        margin-bottom: 0.2rem;
+    }
+    .fc-dict-stat .lbl {
+        font-size: 0.65rem;
+        color: #adb5bd;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+    .stat-total   .val { color: #dc3545; }
+    .stat-learned .val { color: #28a745; }
+    .stat-pending .val { color: #fd7e14; }
+
+    /* ── Счётчик сессии ── */
     .fc-counter {
         font-size: 0.8rem;
         color: #adb5bd;
-        margin-bottom: 2.5rem;
+        margin-bottom: 2rem;
         letter-spacing: 0.05em;
     }
     .fc-counter strong { color: #dc3545; }
@@ -84,9 +118,7 @@
         cursor: pointer;
         user-select: none;
     }
-    .fc-card-flipper.flipped {
-        transform: rotateY(180deg);
-    }
+    .fc-card-flipper.flipped { transform: rotateY(180deg); }
 
     /* ── Стороны карточки ── */
     .fc-face {
@@ -113,6 +145,25 @@
         border-radius: 20px 20px 0 0;
     }
     .fc-back-face { transform: rotateY(180deg); }
+
+    /* ── Стрик-индикатор на карточке ── */
+    .fc-streak-badge {
+        position: absolute;
+        top: 1rem;
+        left: 1rem;
+        display: flex;
+        gap: 4px;
+        z-index: 5;
+    }
+    .fc-streak-dot {
+        width: 8px; height: 8px;
+        border-radius: 50%;
+        background: #e9ecef;
+        border: 1.5px solid #dee2e6;
+        transition: all 0.3s ease;
+    }
+    .fc-streak-dot.lit { background: #28a745; border-color: #28a745; }
+    .fc-streak-dot.miss { background: #dc3545; border-color: #dc3545; }
 
     /* ── Кнопка аудио ── */
     .fc-audio-btn {
@@ -205,6 +256,32 @@
     .fc-hint.wrong { color: #dc3545; }
     .fc-hint.right  { color: #28a745; }
 
+    /* ── Тост-уведомление ── */
+    .fc-toast {
+        position: fixed;
+        bottom: 2rem;
+        left: 50%;
+        transform: translateX(-50%) translateY(80px);
+        background: #212529;
+        color: #fff;
+        padding: 0.6rem 1.2rem;
+        border-radius: 100px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        opacity: 0;
+        transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+        white-space: nowrap;
+        z-index: 100;
+        pointer-events: none;
+    }
+    .fc-toast.show {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+    .fc-toast.green { background: #28a745; }
+    .fc-toast.red   { background: #dc3545; }
+    .fc-toast.orange { background: #fd7e14; }
+
     /* ── Пустое состояние ── */
     .fc-empty { text-align: center; margin-top: 5rem; color: #6c757d; }
     .fc-empty .icon { font-size: 3.5rem; margin-bottom: 1rem; }
@@ -218,10 +295,56 @@
         align-items: center;
         text-align: center;
         margin-top: 2rem;
+        width: 100%;
+        max-width: 360px;
+    }
+    .fc-done-card {
+        background: #fff;
+        border-radius: 20px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        padding: 2rem;
+        width: 100%;
+        margin-bottom: 1rem;
     }
     .fc-done .icon { font-size: 4rem; margin-bottom: 1rem; }
     .fc-done h3 { color: #212529; margin-bottom: 0.5rem; }
-    .fc-done p { color: #6c757d; margin-bottom: 1.5rem; }
+    .fc-done p { color: #6c757d; margin-bottom: 1.5rem; font-size: 0.9rem; }
+    .fc-done-stats {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: center;
+        margin-bottom: 1.5rem;
+    }
+    .fc-done-stat {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 0.85rem 1rem;
+        min-width: 85px;
+    }
+    .fc-done-stat h4 { margin: 0 0 0.2rem; font-size: 1.5rem; font-weight: 700; }
+    .fc-done-stat small { color: #adb5bd; font-size: 0.72rem; }
+    .fc-done-btns {
+        display: flex;
+        gap: 0.75rem;
+        width: 100%;
+    }
+    .fc-done-btn {
+        flex: 1;
+        padding: 0.85rem;
+        border-radius: 12px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .fc-done-btn.primary { background: #dc3545; color: #fff; border: none; box-shadow: 0 4px 12px rgba(220,53,69,0.25); }
+    .fc-done-btn.primary:hover { background: #c82333; transform: translateY(-1px); }
+    .fc-done-btn.outline { background: #fff; color: #6c757d; border: 1.5px solid #dee2e6; }
+    .fc-done-btn.outline:hover { border-color: #adb5bd; color: #495057; }
 </style>
 {% endblock %}
 
@@ -237,6 +360,22 @@
 
     {% if cards_json %}
 
+        <!-- ── Статистика словаря ── -->
+        <div class="fc-dict-stats">
+            <div class="fc-dict-stat stat-total">
+                <div class="val">{{ total_cards }}</div>
+                <div class="lbl">Всего</div>
+            </div>
+            <div class="fc-dict-stat stat-learned">
+                <div class="val" id="stat-learned-val">{{ learned_cards }}</div>
+                <div class="lbl">Изучено</div>
+            </div>
+            <div class="fc-dict-stat stat-pending">
+                <div class="val" id="stat-pending-val">{{ not_learned_cards }}</div>
+                <div class="lbl">Осталось</div>
+            </div>
+        </div>
+
         <div class="fc-counter">
             Карточка <strong id="cur">1</strong> из <strong id="total">0</strong>
         </div>
@@ -249,6 +388,12 @@
 
                 <!-- Лицевая -->
                 <div class="fc-face fc-front-face">
+                    <!-- Точки стрика (3 точки) -->
+                    <div class="fc-streak-badge" id="streak-badge">
+                        <div class="fc-streak-dot" id="dot-0"></div>
+                        <div class="fc-streak-dot" id="dot-1"></div>
+                        <div class="fc-streak-dot" id="dot-2"></div>
+                    </div>
                     <button class="fc-audio-btn" id="audio-btn" title="Прослушать" onclick="playAudio(event)">
                         <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                     </button>
@@ -297,12 +442,31 @@
             </div>
         </div>
 
+        <!-- Экран завершения -->
         <div class="fc-done" id="fc-done">
-            <div class="icon">🎉</div>
-            <h3>Отлично! Все карточки пройдены</h3>
-            <p>Вы справились со всеми карточками в этой сессии</p>
-            <button class="btn btn-danger px-4 me-2" onclick="restartSession()">Повторить ещё раз</button>
-            <a href="{% url 'trainers_home' %}" class="btn btn-outline-secondary px-4 mt-2">На главную</a>
+            <div class="fc-done-card">
+                <div class="icon">🎉</div>
+                <h3>Сессия завершена!</h3>
+                <p id="fc-done-desc">Вы прошли все карточки в этой сессии</p>
+                <div class="fc-done-stats">
+                    <div class="fc-done-stat">
+                        <h4 style="color:#28a745" id="done-known">0</h4>
+                        <small>Знал</small>
+                    </div>
+                    <div class="fc-done-stat">
+                        <h4 style="color:#dc3545" id="done-unknown">0</h4>
+                        <small>Не знал</small>
+                    </div>
+                    <div class="fc-done-stat">
+                        <h4 style="color:#6c757d" id="done-skipped">0</h4>
+                        <small>Пропущено</small>
+                    </div>
+                </div>
+            </div>
+            <div class="fc-done-btns">
+                <button class="fc-done-btn primary" onclick="restartSession()">Ещё раз</button>
+                <a href="{% url 'trainers_home' %}" class="fc-done-btn outline">На главную</a>
+            </div>
         </div>
 
     {% else %}
@@ -316,20 +480,117 @@
 
 </div>
 
+<!-- Тост -->
+<div class="fc-toast" id="fc-toast"></div>
+
 <script>
-const cards = JSON.parse('{{ cards_json|escapejs }}');
-let queue = [...cards];
-let currentIndex = 0;
+// ════════════════════════════════════════════════════════
+//  ДАННЫЕ ИЗ DJANGO
+// ════════════════════════════════════════════════════════
+const CARDS_RAW = JSON.parse('{{ cards_json|escapejs }}');
+
+// ════════════════════════════════════════════════════════
+//  СИСТЕМА ИНТЕРВАЛОВ (в миллисекундах)
+//  streak → через сколько следующего сеанса/времени карточка появится снова
+//  streak 0 = первый знал  → скрыть на этот сеанс (sessionOnly)
+//  streak 1 = 2-й знал     → 1 день
+//  streak 2 = 3-й знал     → 3 дня
+//  streak 3 = 4-й знал     → 7 дней
+//  streak 4+ = 5+ знал     → 30 дней
+// ════════════════════════════════════════════════════════
+const INTERVAL_LABELS = [
+    'Скрыта до следующей сессии',
+    'Скрыта на 1 день',
+    'Скрыта на 3 дня',
+    'Скрыта на неделю',
+    'Скрыта на месяц',
+];
+const INTERVAL_MS = [
+    0,                      // sessionOnly (streak 0 after first "знал")
+    1  * 24 * 3600 * 1000,  // 1 день
+    3  * 24 * 3600 * 1000,  // 3 дня
+    7  * 24 * 3600 * 1000,  // неделя
+    30 * 24 * 3600 * 1000,  // месяц
+];
+
+// ════════════════════════════════════════════════════════
+//  ХРАНИЛИЩЕ СТРИКОВ  (localStorage, ключ per-card)
+//  { cardId: { streak: int, hiddenUntil: timestamp|null } }
+// ════════════════════════════════════════════════════════
+const STORAGE_KEY = 'fc_streaks_v2';
+
+function loadStreaks() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); }
+    catch { return {}; }
+}
+function saveStreaks(data) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+// ════════════════════════════════════════════════════════
+//  ПОСТРОЕНИЕ ОЧЕРЕДИ СЕССИИ
+//  Карточка включается если:
+//   - нет записи о ней (новая)
+//   - hiddenUntil == null (только сессионная блокировка снята)
+//   - hiddenUntil != null и timestamp уже прошёл
+// ════════════════════════════════════════════════════════
+const SESSION_BLOCKED = new Set(); // id карточек, заблокированных в эту сессию
+
+function buildQueue() {
+    const streaks = loadStreaks();
+    const now = Date.now();
+    return CARDS_RAW.filter(card => {
+        const s = streaks[card.id];
+        if (!s) return true;                        // новая карточка
+        if (SESSION_BLOCKED.has(card.id)) return false; // заблокирована в сессии
+        if (s.hiddenUntil && s.hiddenUntil > now) return false; // ещё не пришло время
+        return true;
+    });
+}
+
+// ════════════════════════════════════════════════════════
+//  СОСТОЯНИЕ СЕССИИ
+// ════════════════════════════════════════════════════════
+let queue = [];        // текущая очередь
+let pos = 0;           // позиция в очереди
 let isFlipped = false;
 let isSwiping = false;
 
-// ── Загрузка карточки ─────────────────────────────────────────
+// missStreak[cardId] = кол-во подряд "не знал" в этой сессии
+const missStreak = {};
+
+// Счётчики сессии
+let sessionKnown   = 0;
+let sessionUnknown = 0;
+let sessionSkipped = 0; // карточки убранные в эту сессию через 3×miss
+
+// ════════════════════════════════════════════════════════
+//  ИНИЦИАЛИЗАЦИЯ
+// ════════════════════════════════════════════════════════
+function startSession() {
+    queue = buildQueue();
+    pos = 0;
+    sessionKnown = 0;
+    sessionUnknown = 0;
+    sessionSkipped = 0;
+    Object.keys(missStreak).forEach(k => delete missStreak[k]);
+
+    if (queue.length === 0) { showDone(); return; }
+    loadCard();
+}
+
+// ════════════════════════════════════════════════════════
+//  ЗАГРУЗКА КАРТОЧКИ
+// ════════════════════════════════════════════════════════
 function loadCard() {
     if (queue.length === 0) { showDone(); return; }
 
-    const idx  = currentIndex % queue.length;
+    const idx  = pos % queue.length;
     const card = queue[idx];
+    const streaks = loadStreaks();
+    const streak = (streaks[card.id] || { streak: 0 }).streak;
 
+    // Контент
     document.getElementById('hanzi').textContent          = card.hieroglyph;
     document.getElementById('back-hanzi').textContent     = card.hieroglyph;
     document.getElementById('pinyin').textContent         = card.transcription;
@@ -338,7 +599,11 @@ function loadCard() {
     document.getElementById('total').textContent          = queue.length;
     document.getElementById('audio-btn').classList.remove('playing');
 
-    // сброс переворота без анимации
+    // Стрик-точки (показываем текущий streak до max 3)
+    updateStreakDots(streak, missStreak[card.id] || 0);
+
+    // Miss-точки (красные)
+    // Сброс переворота без анимации
     const flipper = document.getElementById('flipper');
     flipper.style.transition = 'none';
     flipper.style.transform  = '';
@@ -348,35 +613,59 @@ function loadCard() {
     requestAnimationFrame(() => { flipper.style.transition = ''; });
 }
 
-// ── Аудио ─────────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════
+//  СТРИК-ТОЧКИ
+// ════════════════════════════════════════════════════════
+function updateStreakDots(streak, miss) {
+    // Зелёные точки = streak (max 3 отображаем)
+    const shown = Math.min(streak, 3);
+    const missShown = Math.min(miss, 3);
+    for (let i = 0; i < 3; i++) {
+        const dot = document.getElementById(`dot-${i}`);
+        dot.className = 'fc-streak-dot';
+        if (i < shown) dot.classList.add('lit');
+        // Красные miss-точки поверх (если miss больше)
+        // Показываем miss только если streak = 0 (иначе зелёные важнее)
+        if (streak === 0 && i < missShown) dot.classList.add('miss');
+    }
+}
+
+// ════════════════════════════════════════════════════════
+//  АУДИО
+// ════════════════════════════════════════════════════════
 function playAudio(e) {
     e.stopPropagation();
-    const card = queue[currentIndex % queue.length];
+    const card = queue[pos % queue.length];
     if (!card?.audio) return;
     const btn = document.getElementById('audio-btn');
     btn.classList.add('playing');
     const audio = new Audio(card.audio);
     audio.play();
     audio.onended = () => btn.classList.remove('playing');
-    audio.onerror  = () => btn.classList.remove('playing');
+    audio.onerror = () => btn.classList.remove('playing');
 }
 
-// ── Переворот по клику ────────────────────────────────────────
+// ════════════════════════════════════════════════════════
+//  ПЕРЕВОРОТ
+// ════════════════════════════════════════════════════════
 document.getElementById('flipper').addEventListener('click', function(e) {
     if (isSwiping || mouseMoved) return;
     isFlipped = !isFlipped;
     this.classList.toggle('flipped', isFlipped);
 });
 
-// ── Свайп ─────────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════
+//  СВАЙП / ОТВЕТ
+// ════════════════════════════════════════════════════════
 function doSwipe(direction, e) {
     if (e) e.stopPropagation();
-    if (isSwiping) return;
+    if (isSwiping || queue.length === 0) return;
     isSwiping = true;
 
     const flipper = document.getElementById('flipper');
+    const card    = queue[pos % queue.length];
 
-    // Анимация вылета через inline style (не конфликтует с flipped)
+    // Анимация вылета
     flipper.style.transition = 'transform 0.45s ease, opacity 0.45s ease';
     if (direction === 'left') {
         flipper.style.transform = isFlipped
@@ -390,20 +679,171 @@ function doSwipe(direction, e) {
     flipper.style.opacity = '0';
 
     setTimeout(() => {
-        if (direction === 'right') {
-            // Знал → убираем из очереди
-            queue.splice(currentIndex % queue.length, 1);
-            if (queue.length > 0 && currentIndex >= queue.length) currentIndex = 0;
-        } else {
-            // Не знал → переходим к следующей
-            currentIndex = (currentIndex + 1) % queue.length;
-        }
         isSwiping = false;
-        loadCard();
+        if (direction === 'right') {
+            handleKnown(card);
+        } else {
+            handleUnknown(card);
+        }
     }, 450);
 }
 
-// ── Touch-свайпы (мобильные) ──────────────────────────────────
+// ════════════════════════════════════════════════════════
+//  ЛОГИКА "ЗНАЛ"
+// ════════════════════════════════════════════════════════
+function handleKnown(card) {
+    sessionKnown++;
+    const streaks = loadStreaks();
+    const s = streaks[card.id] || { streak: 0, hiddenUntil: null };
+
+    // Сбрасываем miss-стрик
+    missStreak[card.id] = 0;
+
+    // Увеличиваем streak
+    s.streak = (s.streak || 0) + 1;
+
+    // Определяем интервал на основе нового streak
+    // streak 1 → sessionOnly, streak 2 → 1 день, streak 3 → 3 дня, streak 4 → 7 дней, streak 5+ → 30 дней
+    const intervalIndex = Math.min(s.streak - 1, INTERVAL_MS.length - 1);
+    const intervalMs    = INTERVAL_MS[intervalIndex];
+
+    if (intervalMs === 0) {
+        // Сессионная блокировка
+        s.hiddenUntil = null;
+        SESSION_BLOCKED.add(card.id);
+    } else {
+        s.hiddenUntil = Date.now() + intervalMs;
+        SESSION_BLOCKED.add(card.id);
+    }
+
+    streaks[card.id] = s;
+    saveStreaks(streaks);
+
+    // Обновляем API (сохраняем результат)
+    sendResult(card.id, 'correct');
+
+    // Убираем из очереди
+    const idx = pos % queue.length;
+    queue.splice(idx, 1);
+    if (queue.length > 0 && pos >= queue.length) pos = 0;
+
+    // Обновляем счётчик изученных в шапке
+    updateLearnedCounter();
+
+    showToast(INTERVAL_LABELS[intervalIndex], 'green');
+
+    if (queue.length === 0) { showDone(); return; }
+    loadCard();
+}
+
+// ════════════════════════════════════════════════════════
+//  ЛОГИКА "НЕ ЗНАЛ"
+// ════════════════════════════════════════════════════════
+function handleUnknown(card) {
+    sessionUnknown++;
+    const streaks = loadStreaks();
+    const s = streaks[card.id] || { streak: 0, hiddenUntil: null };
+
+    // Уменьшаем streak (минимум 0)
+    if (s.streak > 0) s.streak -= 1;
+
+    // Увеличиваем miss-стрик
+    missStreak[card.id] = (missStreak[card.id] || 0) + 1;
+
+    streaks[card.id] = s;
+    saveStreaks(streaks);
+
+    sendResult(card.id, 'incorrect');
+
+    if (missStreak[card.id] >= 3) {
+        // 3 подряд "не знал" → убрать на сессию
+        SESSION_BLOCKED.add(card.id);
+        missStreak[card.id] = 0;
+        sessionSkipped++;
+
+        const idx = pos % queue.length;
+        queue.splice(idx, 1);
+        if (queue.length > 0 && pos >= queue.length) pos = 0;
+
+        showToast('Карточка убрана до следующей сессии', 'orange');
+
+        if (queue.length === 0) { showDone(); return; }
+    } else {
+        // Карточка остаётся, перемещаем в конец очереди для повтора
+        const idx = pos % queue.length;
+        const [removed] = queue.splice(idx, 1);
+        queue.push(removed);
+        if (pos >= queue.length) pos = 0;
+
+        const remaining = 3 - missStreak[card.id];
+        showToast(`Ещё ${remaining} раза — и пропустим на сессию`, 'red');
+    }
+
+    if (queue.length === 0) { showDone(); return; }
+    loadCard();
+}
+
+// ════════════════════════════════════════════════════════
+//  ОБНОВЛЕНИЕ СЧЁТЧИКОВ В ШАПКЕ
+// ════════════════════════════════════════════════════════
+function updateLearnedCounter() {
+    // Визуально увеличиваем счётчик изученных на 1, уменьшаем "осталось"
+    // (точные данные будут при перезагрузке страницы из БД)
+    const learnedEl = document.getElementById('stat-learned-val');
+    const pendingEl = document.getElementById('stat-pending-val');
+    if (learnedEl && pendingEl) {
+        let learned = parseInt(learnedEl.textContent) || 0;
+        let pending = parseInt(pendingEl.textContent) || 0;
+        learnedEl.textContent = learned + 1;
+        pendingEl.textContent = Math.max(0, pending - 1);
+    }
+}
+
+// ════════════════════════════════════════════════════════
+//  API: отправить результат
+// ════════════════════════════════════════════════════════
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function sendResult(cardId, result) {
+    fetch('/api/dictionary/mark-result/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: JSON.stringify({ card_id: cardId, result: result })
+    }).catch(() => {}); // тихая обработка ошибок
+}
+
+// ════════════════════════════════════════════════════════
+//  ТОСТ
+// ════════════════════════════════════════════════════════
+let toastTimeout;
+function showToast(msg, color = '') {
+    const t = document.getElementById('fc-toast');
+    t.textContent = msg;
+    t.className = `fc-toast ${color}`;
+    clearTimeout(toastTimeout);
+    requestAnimationFrame(() => t.classList.add('show'));
+    toastTimeout = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ════════════════════════════════════════════════════════
+//  TOUCH-СВАЙПЫ (мобильные)
+// ════════════════════════════════════════════════════════
 let touchStartX = 0;
 let touchStartY = 0;
 
@@ -421,53 +861,65 @@ document.getElementById('flipper').addEventListener('touchend', e => {
     }
 }, { passive: true });
 
-// ── Mouse-свайпы (ПК) ─────────────────────────────────────────
+// ════════════════════════════════════════════════════════
+//  MOUSE-СВАЙПЫ (ПК)
+// ════════════════════════════════════════════════════════
 let mouseStartX = 0;
-let mouseMoved = false;
-let isDragging = false;
+let mouseMoved  = false;
+let isDragging  = false;
 
 document.getElementById('flipper').addEventListener('mousedown', e => {
     e.preventDefault();
     mouseStartX = e.clientX;
-    mouseMoved = false;
-    isDragging = true;
+    mouseMoved  = false;
+    isDragging  = true;
 });
-
 document.addEventListener('mousemove', e => {
     if (!isDragging) return;
-    if (Math.abs(e.clientX - mouseStartX) > 10) {
-        mouseMoved = true;
-    }
+    if (Math.abs(e.clientX - mouseStartX) > 10) mouseMoved = true;
 });
-
 document.addEventListener('mouseup', e => {
     if (!isDragging) return;
     isDragging = false;
     const dx = e.clientX - mouseStartX;
-    if (mouseMoved && Math.abs(dx) > 60) {
-        doSwipe(dx > 0 ? 'right' : 'left');
-    }
+    if (mouseMoved && Math.abs(dx) > 60) doSwipe(dx > 0 ? 'right' : 'left');
 });
 
-
-// ── Завершение сессии ─────────────────────────────────────────
+// ════════════════════════════════════════════════════════
+//  ЭКРАН ЗАВЕРШЕНИЯ
+// ════════════════════════════════════════════════════════
 function showDone() {
-    document.getElementById('fc-stack').style.display          = 'none';
-    document.getElementById('fc-done').style.display           = 'flex';
-    document.querySelector('.fc-hints').style.display          = 'none';
-    document.querySelector('.fc-counter').style.display        = 'none';
+    document.getElementById('fc-stack').style.display   = 'none';
+    document.getElementById('fc-done').style.display    = 'flex';
+    document.querySelector('.fc-hints').style.display   = 'none';
+    document.querySelector('.fc-counter').style.display = 'none';
+
+    document.getElementById('done-known').textContent   = sessionKnown;
+    document.getElementById('done-unknown').textContent = sessionUnknown;
+    document.getElementById('done-skipped').textContent = sessionSkipped;
+
+    const total = sessionKnown + sessionUnknown;
+    if (sessionKnown === 0 && total === 0) {
+        document.getElementById('fc-done-desc').textContent = 'Нечего повторять — все карточки скрыты до следующей сессии или ещё не наступило время.';
+    } else {
+        document.getElementById('fc-done-desc').textContent =
+            `Результат: ${sessionKnown} из ${total} верно. Продолжайте — станет лучше!`;
+    }
 }
 
 function restartSession() {
-    queue = [...cards];
-    currentIndex = 0;
-    document.getElementById('fc-stack').style.display          = '';
-    document.getElementById('fc-done').style.display           = 'none';
-    document.querySelector('.fc-hints').style.display          = '';
-    document.querySelector('.fc-counter').style.display        = '';
-    loadCard();
+    document.getElementById('fc-stack').style.display   = '';
+    document.getElementById('fc-done').style.display    = 'none';
+    document.querySelector('.fc-hints').style.display   = '';
+    document.querySelector('.fc-counter').style.display = '';
+    startSession();
 }
 
-loadCard();
+// ════════════════════════════════════════════════════════
+//  СТАРТ
+// ════════════════════════════════════════════════════════
+if (CARDS_RAW.length > 0) {
+    startSession();
+}
 </script>
 {% endblock %}

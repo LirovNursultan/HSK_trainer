@@ -42,7 +42,7 @@ def login_view(request):
             messages.error(request, 'Неверное имя пользователя или пароль')
     else:
         form = LoginForm()
-    
+
     return render(request, 'accounts/login.html', {'form': form})
 
 

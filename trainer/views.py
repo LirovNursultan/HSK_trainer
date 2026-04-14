@@ -138,39 +138,31 @@ def quiz_session(request):
 def trainers_home(request):
     return render(request, 'trainer/trainers_home.html')
 
+# ── Замените существующую функцию flashcards_session на эту ──
+
 @login_required
 def flashcards_session(request):
-    # Получаем словарь текущего пользователя
     try:
-        user_dict = request.user.dictionary          # related_name='dictionary'
+        user_dict = request.user.dictionary
     except MyDictionary.DoesNotExist:
-        # если словарь по какой-то причине не создан — создаём
         user_dict = MyDictionary.objects.create(user=request.user)
 
-    # Берём ВСЕ карточки из личного словаря пользователя
-    cards = user_dict.cards.all().order_by('?')[:50]  # Случайные 50 из словаря пользователя
-    # (через промежуточную модель DictionaryCard)
-    # dict_cards = DictionaryCard.objects.filter(dictionary=user_dict)
-    
+    cards = user_dict.cards.all().order_by('?')[:50]
+
     if not cards.exists():
-        print("DEBUG cards:", card_data)
         return render(request, 'trainer/flashcards.html', {
-            'cards_json': [],
-            'debug_message': 'В вашем личном словаре пока нет карточек'
+            'cards_json': '',
+            'debug_message': 'В вашем личном словаре пока нет карточек',
+            'total_cards': 0,
+            'learned_cards': 0,
+            'not_learned_cards': 0,
         })
 
-    # Получаем связанные Card и нужные поля
-    # cards = Card.objects.all()
-
-     # можно убрать .order_by('?'), если хочешь стабильный порядок
-    
-    # Формируем данные для фронта
     card_data = []
     for card in cards:
         audio_url = None
         if card.audio:
             audio_url = request.build_absolute_uri(card.audio.url)
-
         card_data.append({
             'id': card.id,
             'hieroglyph': card.hieroglyph,
@@ -179,8 +171,19 @@ def flashcards_session(request):
             'audio': audio_url,
         })
 
-    return render(request, 'trainer/flashcards.html', { "cards": cards,
-        'cards_json': json.dumps(card_data)
+    # Статистика для шапки
+    total_cards      = user_dict.get_cards_count()
+    learned_cards    = DictionaryCard.objects.filter(
+        dictionary=user_dict, is_learned=True).count()
+    not_learned_cards = DictionaryCard.objects.filter(
+        dictionary=user_dict, is_learned=False).count()
+
+    return render(request, 'trainer/flashcards.html', {
+        'cards': cards,
+        'cards_json': json.dumps(card_data),
+        'total_cards': total_cards,
+        'learned_cards': learned_cards,
+        'not_learned_cards': not_learned_cards,
     })
 
 class MyDictionaryPDFView(LoginRequiredMixin, View):
