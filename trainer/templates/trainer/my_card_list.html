@@ -259,12 +259,25 @@
         .then(response => response.json())
         .then(data => {
             if (data.success) {
+                // Если перевели в «Не изучено» — сбрасываем стрик
+                if (!data.is_learned) {
+                    resetCardStreak(cardId);   // функция из flashcards.html
+                }
                 location.reload();
             } else {
                 alert('Ошибка при обновлении статуса');
             }
         });
     }
+    
+    // Сброс стрика при переводе обратно в "Не изучено"
+    function resetCardStreak(cardId) {
+        const streaks = JSON.parse(localStorage.getItem('fc_streaks_v2') || '{}');
+        if (streaks[cardId]) {
+            delete streaks[cardId];
+            localStorage.setItem('fc_streaks_v2', JSON.stringify(streaks));
+        }
+    }    
 
     function getCookie(name) {
         let cookieValue = null;

@@ -160,6 +160,8 @@ def flashcards_session(request):
 
     card_data = []
     for card in cards:
+        # Получаем статус изученности
+        dict_entry = DictionaryCard.objects.get(dictionary=user_dict, card=card)
         audio_url = None
         if card.audio:
             audio_url = request.build_absolute_uri(card.audio.url)
@@ -169,6 +171,7 @@ def flashcards_session(request):
             'transcription': card.transcription,
             'translate': card.translate,
             'audio': audio_url,
+            'is_learned': dict_entry.is_learned,
         })
 
     # Статистика для шапки
@@ -189,30 +192,23 @@ def flashcards_session(request):
 @login_required
 @require_POST
 def mark_learned(request):
-    """Пометить карточку как изученную (вызывается из flashcards)"""
+    """Пометить карточку как изученную при достижении 3+ стрика"""
     try:
         data = json.loads(request.body)
         card_id = data.get('card_id')
-
         if not card_id:
-            return JsonResponse({'success': False, 'message': 'Нет ID карточки'}, status=400)
+            return JsonResponse({'success': False}, status=400)
 
         user_dictionary = MyDictionary.objects.get(user=request.user)
-        entry = DictionaryCard.objects.get(
-            dictionary=user_dictionary,
-            card_id=card_id
-        )
-
+        entry = DictionaryCard.objects.get(dictionary=user_dictionary, card_id=card_id)
+        
         if not entry.is_learned:
             entry.is_learned = True
             entry.save()
 
         return JsonResponse({'success': True})
-
-    except (MyDictionary.DoesNotExist, DictionaryCard.DoesNotExist):
-        return JsonResponse({'success': False, 'message': 'Запись не найдена'}, status=404)
-    except Exception as e:
-        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+    except Exception:
+        return JsonResponse({'success': False}, status=500)
 
 class MyDictionaryPDFView(LoginRequiredMixin, View):
     def get(self, request):
@@ -322,7 +318,6 @@ def add_to_dictionary(request):
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
-
 @login_required
 @require_POST
 def toggle_learned(request):
@@ -333,14 +328,12 @@ def toggle_learned(request):
         if not card_id:
             return JsonResponse({'success': False, 'message': 'Нет ID карточки'}, status=400)
         
-        # Находим запись в словаре пользователя
         user_dictionary = MyDictionary.objects.get(user=request.user)
         entry = DictionaryCard.objects.get(
             dictionary=user_dictionary,
             card_id=card_id
         )
         
-        # Меняем статус
         entry.is_learned = not entry.is_learned
         entry.save()
         
@@ -350,11 +343,8 @@ def toggle_learned(request):
             'message': 'Статус обновлён'
         })
         
-    except (MyDictionary.DoesNotExist, DictionaryCard.DoesNotExist):
-        return JsonResponse({'success': False, 'message': 'Запись не найдена'}, status=404)
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
-
 
 @login_required
 @require_POST
