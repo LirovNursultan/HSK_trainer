@@ -186,6 +186,34 @@ def flashcards_session(request):
         'not_learned_cards': not_learned_cards,
     })
 
+@login_required
+@require_POST
+def mark_learned(request):
+    """Пометить карточку как изученную (вызывается из flashcards)"""
+    try:
+        data = json.loads(request.body)
+        card_id = data.get('card_id')
+
+        if not card_id:
+            return JsonResponse({'success': False, 'message': 'Нет ID карточки'}, status=400)
+
+        user_dictionary = MyDictionary.objects.get(user=request.user)
+        entry = DictionaryCard.objects.get(
+            dictionary=user_dictionary,
+            card_id=card_id
+        )
+
+        if not entry.is_learned:
+            entry.is_learned = True
+            entry.save()
+
+        return JsonResponse({'success': True})
+
+    except (MyDictionary.DoesNotExist, DictionaryCard.DoesNotExist):
+        return JsonResponse({'success': False, 'message': 'Запись не найдена'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+
 class MyDictionaryPDFView(LoginRequiredMixin, View):
     def get(self, request):
         user_dictionary = request.user.dictionary
@@ -495,5 +523,3 @@ class MyDictCardDetailView(LoginRequiredMixin, DetailView):
         
         return context
     
-
-

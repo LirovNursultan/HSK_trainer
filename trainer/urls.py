@@ -19,6 +19,7 @@ urlpatterns = [
     path('api/dictionary/remove/', remove_from_dictionary, name='remove_from_dictionary'),
     path('train/', views.trainers_home, name='trainers_home'),
     path('train/flashcards/', views.flashcards_session, name='flashcards_session'),
+    path('api/dictionary/mark-learned/', views.mark_learned, name='mark_learned'),
 
     path('train/quiz/', views.quiz_session, name='quiz_session'),
     path('api/dictionary/mark-result/', mark_result, name='mark_result'),

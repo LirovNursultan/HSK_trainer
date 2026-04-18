@@ -721,6 +721,10 @@ function handleKnown(card) {
 
     // Обновляем API (сохраняем результат)
     sendResult(card.id, 'correct');
+    // Отправляем результат и проверяем, нужно ли пометить как изученную
+    if (s.streak >= 3) {
+        markAsLearned(card.id);
+    }
 
     // Убираем из очереди
     const idx = pos % queue.length;
@@ -734,6 +738,20 @@ function handleKnown(card) {
 
     if (queue.length === 0) { showDone(); return; }
     loadCard();
+}
+
+// Пометить карточку как изученную
+function markAsLearned(cardId) {
+    fetch('/api/dictionary/mark-learned/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: JSON.stringify({ card_id: cardId })
+    })
+    .then(r => r.json())
+    .catch(() => {}); // тихая ошибка
 }
 
 // ════════════════════════════════════════════════════════
