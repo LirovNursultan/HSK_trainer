@@ -1,0 +1,926 @@
+{% extends '../base.html' %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5/dist/hanzi-writer.min.js"></script>
+<style>
+    .navbar { display: none !important; }
+    body { background: #f8f9fa !important; }
+
+    /* ── Страница ── */
+    .st-page {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 2rem 1rem 5rem;
+    }
+
+    /* ── Кнопка назад ── */
+    .st-back {
+        align-self: flex-start;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        color: #6c757d;
+        font-size: 0.8rem;
+        font-weight: 500;
+        text-decoration: none;
+        border: 1.5px solid #dee2e6;
+        padding: 0.5rem 1rem;
+        border-radius: 100px;
+        background: #fff;
+        transition: all 0.2s ease;
+        margin-bottom: 2.5rem;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    .st-back:hover { color: #dc3545; border-color: #dc3545; background: #fff5f5; text-decoration: none; }
+    .st-back svg { width: 15px; height: 15px; flex-shrink: 0; transition: transform 0.2s; }
+    .st-back:hover svg { transform: translateX(-3px); }
+
+    /* ── Прогресс ── */
+    .st-progress-wrap {
+        width: 100%;
+        max-width: 580px;
+        margin-bottom: 0.6rem;
+    }
+    .st-progress-bg {
+        height: 5px;
+        background: #e9ecef;
+        border-radius: 100px;
+        overflow: hidden;
+    }
+    .st-progress-fill {
+        height: 100%;
+        background: #dc3545;
+        border-radius: 100px;
+        transition: width 0.4s ease;
+    }
+    .st-progress-label {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.75rem;
+        color: #adb5bd;
+        margin-top: 0.4rem;
+        margin-bottom: 1.5rem;
+    }
+    .st-progress-label strong { color: #dc3545; }
+
+    /* ── Основная строка ── */
+    .st-main-row {
+        display: flex;
+        gap: 1rem;
+        width: 100%;
+        max-width: 580px;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+    }
+
+    /* ── Колонка с холстом ── */
+    .st-canvas-col {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        flex: 1;
+        min-width: 0;
+    }
+
+    /* ── Карточка холста ── */
+    .st-canvas-card {
+        background: #fff;
+        border-radius: 16px;
+        border: 1.5px solid #e9ecef;
+        overflow: hidden;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+    .st-canvas-header {
+        padding: 0.6rem 0.9rem;
+        border-bottom: 1px solid #e9ecef;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .st-canvas-header-left { font-size: 0.78rem; color: #6c757d; }
+    .st-stroke-badge {
+        font-size: 0.7rem;
+        background: #f8f9fa;
+        color: #6c757d;
+        padding: 0.2rem 0.75rem;
+        border-radius: 100px;
+        border: 1px solid #dee2e6;
+    }
+
+    /* ── Область рисования ── */
+    .st-canvas-area {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 1;
+        background: #fff;
+    }
+    .st-grid-svg {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+    }
+    #hanzi-writer-target {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+    /* ── Кнопка скрыть контур ── */
+    .st-toggle-outline {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.7rem;
+        color: #6c757d;
+        border: 1px solid #dee2e6;
+        padding: 0.3rem 0.7rem;
+        border-radius: 100px;
+        background: #fff;
+        cursor: pointer;
+        z-index: 20;
+        transition: all 0.2s;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+    .st-toggle-outline:hover { border-color: #dc3545; color: #dc3545; }
+    .st-toggle-outline.active { border-color: #dc3545; color: #dc3545; background: #fff5f5; }
+    .st-toggle-outline svg { width: 12px; height: 12px; }
+
+    /* ── Фидбэк ── */
+    .st-feedback {
+        background: #f8f9fa;
+        border-radius: 10px;
+        border: 1.5px solid #e9ecef;
+        padding: 0.7rem 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        font-size: 0.85rem;
+        color: #6c757d;
+        min-height: 44px;
+        transition: all 0.25s;
+    }
+    .st-feedback.ok  { border-color: #28a745; background: #f0fff4; color: #28a745; }
+    .st-feedback.bad { border-color: #dc3545; background: #fff5f5; color: #dc3545; }
+    .st-feedback-dot {
+        width: 8px; height: 8px;
+        border-radius: 50%;
+        background: #adb5bd;
+        flex-shrink: 0;
+        transition: background 0.25s;
+    }
+    .st-feedback.ok  .st-feedback-dot { background: #28a745; }
+    .st-feedback.bad .st-feedback-dot { background: #dc3545; }
+
+    /* ── Правая колонка ── */
+    .st-info-col {
+        display: flex;
+        flex-direction: column;
+        gap: 0.65rem;
+        width: 148px;
+        flex-shrink: 0;
+    }
+
+    /* ── Карточка иероглифа ── */
+    .st-char-card {
+        background: #fff;
+        border-radius: 14px;
+        border: 1.5px solid #e9ecef;
+        padding: 0.85rem 0.75rem;
+        text-align: center;
+    }
+    .st-hanzi-big {
+        font-family: 'SimHei', 'Microsoft YaHei', sans-serif;
+        font-size: 3.2rem;
+        font-weight: bold;
+        color: #dc3545;
+        line-height: 1;
+        margin-bottom: 0.25rem;
+    }
+    .st-pinyin {
+        font-size: 0.8rem;
+        color: #6c757d;
+        font-style: italic;
+        margin-bottom: 0.2rem;
+    }
+    .st-translate {
+        font-size: 0.75rem;
+        color: #adb5bd;
+    }
+
+    /* ── Прогресс черт ── */
+    .st-strokes-card {
+        background: #fff;
+        border-radius: 14px;
+        border: 1.5px solid #e9ecef;
+        padding: 0.7rem 0.85rem;
+    }
+    .st-strokes-label {
+        font-size: 0.65rem;
+        color: #adb5bd;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.5rem;
+    }
+    .st-strokes-dots {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+    .st-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #e9ecef;
+        border: 1.5px solid #dee2e6;
+        transition: all 0.3s ease;
+        flex-shrink: 0;
+    }
+    .st-dot.done    { background: #28a745; border-color: #28a745; }
+    .st-dot.current { background: transparent; border: 2px solid #28a745; }
+
+    /* ── Анимация ── */
+    .st-anim-card {
+        background: #fff;
+        border-radius: 14px;
+        border: 1.5px solid #e9ecef;
+        padding: 0.7rem 0.85rem;
+        cursor: pointer;
+        transition: border-color 0.2s;
+    }
+    .st-anim-card:hover { border-color: #dc3545; }
+    .st-anim-label {
+        font-size: 0.65rem;
+        color: #adb5bd;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.5rem;
+    }
+    .st-anim-preview {
+        background: #f8f9fa;
+        border-radius: 8px;
+        height: 58px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #e9ecef;
+        overflow: hidden;
+    }
+    #anim-writer-target { width: 52px; height: 52px; }
+    .st-anim-hint {
+        font-size: 0.65rem;
+        color: #adb5bd;
+        text-align: center;
+        margin-top: 0.4rem;
+    }
+
+    /* ── Точность ── */
+    .st-accuracy-card {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 0.65rem 0.75rem;
+        text-align: center;
+    }
+    .st-accuracy-val { font-size: 1.3rem; font-weight: 600; color: #212529; }
+    .st-accuracy-lbl { font-size: 0.65rem; color: #adb5bd; margin-top: 1px; }
+
+    /* ── Кнопки действий ── */
+    .st-actions {
+        display: flex;
+        gap: 0.5rem;
+        width: 100%;
+        max-width: 580px;
+    }
+    .st-btn {
+        flex: 1;
+        padding: 0.75rem;
+        border-radius: 10px;
+        border: 1.5px solid #dee2e6;
+        background: #fff;
+        color: #6c757d;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-align: center;
+    }
+    .st-btn:hover { border-color: #adb5bd; color: #495057; }
+    .st-btn.hint  { border-color: #dc3545; color: #dc3545; }
+    .st-btn.hint:hover { background: #fff5f5; }
+    .st-btn.skip  { background: #dc3545; color: #fff; border-color: #dc3545; font-weight: 500; }
+    .st-btn.skip:hover { background: #c82333; }
+    .st-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ── Экран завершения ── */
+    .st-done {
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        width: 100%;
+        max-width: 480px;
+    }
+    .st-done-card {
+        background: #fff;
+        border-radius: 20px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        padding: 2.5rem 2rem;
+        width: 100%;
+        margin-bottom: 1rem;
+    }
+    .st-done-emoji { font-size: 3rem; margin-bottom: 0.75rem; }
+    .st-done h3 { font-size: 1.3rem; color: #212529; margin-bottom: 0.4rem; }
+    .st-done p  { font-size: 0.9rem; color: #6c757d; margin-bottom: 1.5rem; }
+    .st-done-row {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: center;
+        margin-bottom: 1.5rem;
+    }
+    .st-done-stat {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 0.85rem 1.1rem;
+        min-width: 85px;
+    }
+    .st-done-stat h4 { margin: 0 0 0.2rem; font-size: 1.4rem; font-weight: 600; }
+    .st-done-stat small { color: #adb5bd; font-size: 0.7rem; }
+    .st-done-btns { display: flex; gap: 0.75rem; width: 100%; }
+    .st-done-btn {
+        flex: 1; padding: 0.85rem;
+        border-radius: 12px;
+        font-size: 0.95rem; font-weight: 500;
+        cursor: pointer; transition: all 0.2s;
+        text-decoration: none;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .st-done-btn.primary { background: #dc3545; color: #fff; border: none; }
+    .st-done-btn.primary:hover { background: #c82333; }
+    .st-done-btn.outline { background: #fff; color: #6c757d; border: 1.5px solid #dee2e6; }
+    .st-done-btn.outline:hover { border-color: #adb5bd; color: #495057; }
+
+    /* ── Пустое состояние ── */
+    .st-empty {
+        text-align: center;
+        margin-top: 4rem;
+        max-width: 360px;
+    }
+    .st-empty .icon { font-size: 3.5rem; margin-bottom: 1rem; }
+    .st-empty h4 { color: #495057; margin-bottom: 0.5rem; }
+    .st-empty p { color: #6c757d; font-size: 0.9rem; margin-bottom: 1.5rem; }
+
+    /* ── Анимация появления ── */
+    @keyframes st-fade-in {
+        from { opacity: 0; transform: translateY(8px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+    .st-main-row, .st-actions {
+        animation: st-fade-in 0.3s ease;
+    }
+
+    /* ── Мобильный ── */
+    @media (max-width: 540px) {
+        .st-main-row { flex-direction: column; }
+        .st-info-col { width: 100%; flex-direction: row; flex-wrap: wrap; }
+        .st-char-card { flex: 1; min-width: 120px; }
+        .st-strokes-card { flex: 1; min-width: 120px; }
+        .st-anim-card { flex: 1; min-width: 120px; }
+        .st-accuracy-card { flex: 1; min-width: 80px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="st-page">
+
+    <a href="{% url 'trainers_home' %}" class="st-back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+             stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 12H5M12 5l-7 7 7 7"/>
+        </svg>
+        Тренажёры
+    </a>
+
+    {% if not empty %}
+
+    <!-- Прогресс -->
+    <div class="st-progress-wrap">
+        <div class="st-progress-bg">
+            <div class="st-progress-fill" id="st-progress-fill" style="width:0%"></div>
+        </div>
+        <div class="st-progress-label">
+            <span id="st-progress-text">Карточка 1</span>
+            <span><strong id="st-correct-count">0</strong> правильно</span>
+        </div>
+    </div>
+
+    <!-- Основная строка -->
+    <div class="st-main-row" id="st-main-row">
+
+        <!-- Холст -->
+        <div class="st-canvas-col">
+            <div class="st-canvas-card">
+                <div class="st-canvas-header">
+                    <span class="st-canvas-header-left">Нарисуйте иероглиф</span>
+                    <span class="st-stroke-badge" id="st-stroke-badge">черта 1</span>
+                </div>
+                <div class="st-canvas-area">
+                    <!-- Направляющие линии -->
+                    <svg class="st-grid-svg" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+                        <line x1="150" y1="0" x2="150" y2="300" stroke="#dee2e6" stroke-width="0.8" stroke-dasharray="5,5"/>
+                        <line x1="0" y1="150" x2="300" y2="150" stroke="#dee2e6" stroke-width="0.8" stroke-dasharray="5,5"/>
+                        <line x1="0" y1="0" x2="300" y2="300" stroke="#dee2e6" stroke-width="0.8" stroke-dasharray="5,5"/>
+                        <line x1="300" y1="0" x2="0" y2="300" stroke="#dee2e6" stroke-width="0.8" stroke-dasharray="5,5"/>
+                        <rect x="1" y="1" width="298" height="298" fill="none" stroke="#dee2e6" stroke-width="1"/>
+                    </svg>
+
+                    <!-- HanziWriter монтируется сюда -->
+                    <div id="hanzi-writer-target"></div>
+
+                    <!-- Кнопка скрыть/показать контур -->
+                    <button class="st-toggle-outline" id="st-toggle-outline" onclick="toggleOutline()">
+                        <svg id="st-eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                        <span id="st-toggle-label">скрыть</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Фидбэк -->
+            <div class="st-feedback" id="st-feedback">
+                <div class="st-feedback-dot"></div>
+                <span id="st-feedback-text">Нарисуйте первую черту</span>
+            </div>
+        </div>
+
+        <!-- Правая колонка -->
+        <div class="st-info-col">
+
+            <!-- Иероглиф + инфо -->
+            <div class="st-char-card">
+                <div class="st-hanzi-big" id="st-hanzi-display"></div>
+                <div class="st-pinyin" id="st-pinyin-display"></div>
+                <div class="st-translate" id="st-translate-display"></div>
+            </div>
+
+            <!-- Прогресс черт -->
+            <div class="st-strokes-card">
+                <div class="st-strokes-label">прогресс черт</div>
+                <div class="st-strokes-dots" id="st-strokes-dots"></div>
+            </div>
+
+            <!-- Анимация -->
+            <div class="st-anim-card" onclick="playAnimation()">
+                <div class="st-anim-label">анимация</div>
+                <div class="st-anim-preview">
+                    <div id="anim-writer-target"></div>
+                </div>
+                <div class="st-anim-hint">нажмите для просмотра</div>
+            </div>
+
+            <!-- Точность -->
+            <div class="st-accuracy-card">
+                <div class="st-accuracy-val" id="st-accuracy">—</div>
+                <div class="st-accuracy-lbl">точность</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Кнопки действий -->
+    <div class="st-actions">
+        <button class="st-btn hint" id="btn-hint" onclick="giveHint()">подсказка</button>
+        <button class="st-btn" id="btn-erase" onclick="eraseStrokes()">стереть</button>
+        <button class="st-btn skip" id="btn-skip" onclick="skipCard()">пропустить →</button>
+    </div>
+
+    <!-- Экран завершения -->
+    <div class="st-done" id="st-done">
+        <div class="st-done-card">
+            <div class="st-done-emoji" id="st-done-emoji">🎉</div>
+            <h3 id="st-done-title">Сессия завершена!</h3>
+            <p id="st-done-desc">Вы прошли все карточки</p>
+            <div class="st-done-row">
+                <div class="st-done-stat">
+                    <h4 style="color:#28a745" id="done-correct">0</h4>
+                    <small>Правильно</small>
+                </div>
+                <div class="st-done-stat">
+                    <h4 style="color:#dc3545" id="done-skipped">0</h4>
+                    <small>Пропущено</small>
+                </div>
+                <div class="st-done-stat">
+                    <h4 style="color:#6c757d" id="done-total">0</h4>
+                    <small>Всего</small>
+                </div>
+            </div>
+        </div>
+        <div class="st-done-btns">
+            <button class="st-done-btn primary" onclick="restartSession()">Повторить</button>
+            <a href="{% url 'trainers_home' %}" class="st-done-btn outline">На главную</a>
+        </div>
+    </div>
+
+    {% else %}
+
+    <!-- Пустое состояние -->
+    <div class="st-empty">
+        <div class="icon">📭</div>
+        <h4>Словарь пуст</h4>
+        <p>Добавьте карточки в свой словарь, чтобы начать тренировку рисования.</p>
+        <a href="{% url 'card_list' %}" class="st-btn skip" style="text-decoration:none; display:inline-block; max-width:220px;">
+            Перейти к карточкам
+        </a>
+    </div>
+
+    {% endif %}
+
+</div>
+
+<script>
+// ══════════════════════════════════════════════════
+//  ДАННЫЕ
+// ══════════════════════════════════════════════════
+const ALL_CARDS = JSON.parse('{{ cards_json|escapejs }}');
+
+// ══════════════════════════════════════════════════
+//  СОСТОЯНИЕ
+// ══════════════════════════════════════════════════
+let sessionCards  = [];
+let currentIdx    = 0;
+let correctCount  = 0;
+let skippedCount  = 0;
+let totalStrokes  = 0;
+let correctStrokes = 0;
+let outlineVisible = true;
+
+let writer     = null;   // HanziWriter для холста
+let animWriter = null;   // HanziWriter для превью-анимации
+let currentStrokeNum   = 0;
+let totalStrokeCount   = 0;
+let cardFinished = false;
+
+// ══════════════════════════════════════════════════
+//  УТИЛИТЫ
+// ══════════════════════════════════════════════════
+function shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
+
+function getCookie(name) {
+    let v = null;
+    if (document.cookie) {
+        document.cookie.split(';').forEach(c => {
+            c = c.trim();
+            if (c.startsWith(name + '=')) v = decodeURIComponent(c.slice(name.length + 1));
+        });
+    }
+    return v;
+}
+
+function sendResult(cardId, result) {
+    fetch('/api/dictionary/mark-result/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+        body: JSON.stringify({ card_id: cardId, result })
+    }).catch(() => {});
+}
+
+// ══════════════════════════════════════════════════
+//  ИНИЦИАЛИЗАЦИЯ СЕССИИ
+// ══════════════════════════════════════════════════
+function initSession() {
+    sessionCards  = shuffle(ALL_CARDS);
+    currentIdx    = 0;
+    correctCount  = 0;
+    skippedCount  = 0;
+    totalStrokes  = 0;
+    correctStrokes = 0;
+    outlineVisible = true;
+
+    document.getElementById('st-done').style.display = 'none';
+    document.getElementById('st-main-row').style.display = 'flex';
+    document.querySelector('.st-actions').style.display  = 'flex';
+
+    loadCard();
+}
+
+// ══════════════════════════════════════════════════
+//  ЗАГРУЗКА КАРТОЧКИ
+// ══════════════════════════════════════════════════
+function loadCard() {
+    if (currentIdx >= sessionCards.length) {
+        showDone();
+        return;
+    }
+
+    const card = sessionCards[currentIdx];
+    cardFinished   = false;
+    currentStrokeNum  = 0;
+    totalStrokeCount  = 0;
+    outlineVisible = true;
+
+    // Обновить инфо-панель
+    document.getElementById('st-hanzi-display').textContent   = card.hieroglyph;
+    document.getElementById('st-pinyin-display').textContent  = card.transcription;
+    document.getElementById('st-translate-display').textContent = card.translate;
+
+    // Сбросить кнопку контура
+    const btn = document.getElementById('st-toggle-outline');
+    btn.classList.remove('active');
+    document.getElementById('st-toggle-label').textContent = 'скрыть';
+    setEyeIcon(true);
+
+    // Сбросить фидбэк
+    setFeedback('neutral', 'Нарисуйте первую черту');
+
+    // Прогресс
+    updateProgress();
+
+    // Уничтожить старые writer-ы
+    const target = document.getElementById('hanzi-writer-target');
+    target.innerHTML = '';
+    const animTarget = document.getElementById('anim-writer-target');
+    animTarget.innerHTML = '';
+
+    // Размер холста — берём из родительского элемента
+    const area = target.parentElement;
+    const size = area.offsetWidth || 280;
+
+    // ── Основной writer (quiz-режим) ──
+    writer = HanziWriter.create('hanzi-writer-target', card.hieroglyph, {
+        width:  size,
+        height: size,
+        padding: size * 0.08,
+        showOutline: true,
+        outlineColor: '#e9ecef',
+        strokeColor: '#212529',
+        highlightColor: '#dc3545',
+        drawingColor: '#dc3545',
+        drawingWidth: size * 0.04,
+        strokeAnimationSpeed: 1,
+        delayBetweenStrokes: 200,
+        showHintAfterMisses: false,
+        leniency: 1,
+        onLoadCharDataSuccess: function(data) {
+            totalStrokeCount = data.strokes ? data.strokes.length : 0;
+            buildStrokeDots(totalStrokeCount);
+            updateStrokeBadge(1);
+            startQuiz();
+        },
+        onLoadCharDataError: function() {
+            setFeedback('bad', 'Нет данных для этого иероглифа — пропустите карточку');
+            document.getElementById('btn-hint').disabled = true;
+            document.getElementById('btn-erase').disabled = true;
+        }
+    });
+
+    // ── Анимационный writer (превью) ──
+    animWriter = HanziWriter.create('anim-writer-target', card.hieroglyph, {
+        width:  52,
+        height: 52,
+        padding: 4,
+        showOutline: true,
+        outlineColor: '#e9ecef',
+        strokeColor: '#dc3545',
+        strokeAnimationSpeed: 1.5,
+        delayBetweenStrokes: 100,
+    });
+}
+
+// ══════════════════════════════════════════════════
+//  QUIZ-РЕЖИМ
+// ══════════════════════════════════════════════════
+
+// Общий колбэк завершения карточки
+function onCardComplete() {
+    if (cardFinished) return;
+    cardFinished = true;
+    correctCount++;
+    const acc = totalStrokes > 0 ? Math.round((correctStrokes / totalStrokes) * 100) : 100;
+    document.getElementById('st-accuracy').textContent = acc + '%';
+    setFeedback('ok', 'Карточка завершена! Нажмите «Далее»');
+    sendResult(sessionCards[currentIdx].id, 'correct');
+    const skipBtn = document.getElementById('btn-skip');
+    skipBtn.textContent = 'Далее →';
+    skipBtn.onclick = nextCard;
+}
+
+// Строим объект опций для quiz, начиная с нужной черты
+function buildQuizOptions(startStroke, showHint) {
+    return {
+        quizStartStrokeNum: startStroke || 0,
+        showHintAfterMisses: showHint || false,
+        onMistake: function(strokeData) {
+            totalStrokes++;
+            currentStrokeNum = strokeData.strokeNum;
+            setFeedback('bad', showHint ? 'Неверно — сейчас появится подсказка' : 'Неверно — попробуйте ещё раз');
+            updateStrokeBadge(strokeData.strokeNum + 1);
+            // точки НЕ меняем — круг остаётся current (зелёная обводка)
+        },
+        onCorrectStroke: function(strokeData) {
+            totalStrokes++;
+            correctStrokes++;
+            currentStrokeNum = strokeData.strokeNum + 1;
+            const isLast = strokeData.strokeNum + 1 >= totalStrokeCount;
+            setFeedback('ok', isLast ? 'Отлично! Иероглиф написан верно!' : 'Правильно! Следующая черта');
+            updateDots(strokeData.strokeNum, true);
+            if (!isLast) updateStrokeBadge(strokeData.strokeNum + 2);
+        },
+        onComplete: function() {
+            onCardComplete();
+        }
+    };
+}
+
+function startQuiz() {
+    writer.quiz(buildQuizOptions(0, false));
+}
+
+// ══════════════════════════════════════════════════
+//  ТОЧКИ ЧЕРТ
+// ══════════════════════════════════════════════════
+function buildStrokeDots(count) {
+    const container = document.getElementById('st-strokes-dots');
+    container.innerHTML = '';
+    for (let i = 0; i < count; i++) {
+        const dot = document.createElement('div');
+        dot.className = 'st-dot' + (i === 0 ? ' current' : '');
+        dot.id = 'st-dot-' + i;
+        container.appendChild(dot);
+    }
+}
+
+function updateDots(strokeIdx, correct) {
+    const dot = document.getElementById('st-dot-' + strokeIdx);
+    if (dot) { dot.classList.remove('current'); dot.classList.add('done'); }
+    // Следующая — current
+    const next = document.getElementById('st-dot-' + (strokeIdx + 1));
+    if (next) { next.classList.add('current'); }
+}
+
+function updateStrokeBadge(num) {
+    const el = document.getElementById('st-stroke-badge');
+    if (el) el.textContent = `черта ${num} из ${totalStrokeCount}`;
+}
+
+// ══════════════════════════════════════════════════
+//  ПРОГРЕСС СЕССИИ
+// ══════════════════════════════════════════════════
+function updateProgress() {
+    const total = sessionCards.length;
+    const pct   = total > 0 ? Math.round((currentIdx / total) * 100) : 0;
+    document.getElementById('st-progress-fill').style.width = pct + '%';
+    document.getElementById('st-progress-text').textContent =
+        `Карточка ${currentIdx + 1} из ${total}`;
+    document.getElementById('st-correct-count').textContent = correctCount;
+}
+
+// ══════════════════════════════════════════════════
+//  ФИДБЭК
+// ══════════════════════════════════════════════════
+function setFeedback(type, text) {
+    const el = document.getElementById('st-feedback');
+    el.className = 'st-feedback';
+    if (type === 'ok')  el.classList.add('ok');
+    if (type === 'bad') el.classList.add('bad');
+    document.getElementById('st-feedback-text').textContent = text;
+}
+
+// ══════════════════════════════════════════════════
+//  КНОПКИ ДЕЙСТВИЙ
+// ══════════════════════════════════════════════════
+function giveHint() {
+    if (!writer || cardFinished) return;
+
+    // cancelQuiz + перезапуск с текущей черты и showHintAfterMisses:1
+    // При первом же промахе HanziWriter сам анимирует правильную черту
+    writer.cancelQuiz();
+    writer.quiz(buildQuizOptions(currentStrokeNum, 1));
+    setFeedback('neutral', 'Нарисуйте черту — при ошибке появится анимация подсказки');
+}
+
+function eraseStrokes() {
+    if (!writer || cardFinished) return;
+
+    // 1. Останавливаем текущий quiz
+    writer.cancelQuiz();
+
+    // 2. Сбрасываем точки, счётчик черты и счётчики точности
+    currentStrokeNum = 0;
+    totalStrokes = 0;
+    correctStrokes = 0;
+    buildStrokeDots(totalStrokeCount);
+    updateStrokeBadge(1);
+    setFeedback('neutral', 'Начните сначала');
+
+    // 3. Запускаем quiz с начала, без подсказок
+    writer.quiz(buildQuizOptions(0, false));
+}
+
+function skipCard() {
+    if (cardFinished) { nextCard(); return; }
+    skippedCount++;
+    sendResult(sessionCards[currentIdx].id, 'incorrect');
+    nextCard();
+}
+
+function nextCard() {
+    currentIdx++;
+    // Сбросить кнопку пропустить
+    const skipBtn = document.getElementById('btn-skip');
+    skipBtn.textContent = 'пропустить →';
+    skipBtn.onclick = skipCard;
+    document.getElementById('btn-hint').disabled  = false;
+    document.getElementById('btn-erase').disabled = false;
+    document.getElementById('st-accuracy').textContent = '—';
+    updateProgress();
+    loadCard();
+}
+
+// ══════════════════════════════════════════════════
+//  СКРЫТЬ / ПОКАЗАТЬ КОНТУР
+// ══════════════════════════════════════════════════
+function toggleOutline() {
+    if (!writer) return;
+    outlineVisible = !outlineVisible;
+    if (outlineVisible) {
+        writer.showOutline();
+    } else {
+        writer.hideOutline();
+    }
+    const btn = document.getElementById('st-toggle-outline');
+    btn.classList.toggle('active', !outlineVisible);
+    document.getElementById('st-toggle-label').textContent = outlineVisible ? 'скрыть' : 'показать';
+    setEyeIcon(outlineVisible);
+}
+
+function setEyeIcon(visible) {
+    const icon = document.getElementById('st-eye-icon');
+    if (visible) {
+        icon.innerHTML = `
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+            <circle cx="12" cy="12" r="3"/>`;
+    } else {
+        icon.innerHTML = `
+            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+            <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+            <line x1="1" y1="1" x2="23" y2="23"/>`;
+    }
+}
+
+// ══════════════════════════════════════════════════
+//  АНИМАЦИЯ ПРЕВЬЮ
+// ══════════════════════════════════════════════════
+function playAnimation() {
+    if (!animWriter) return;
+    animWriter.animateCharacter();
+}
+
+// ══════════════════════════════════════════════════
+//  ЭКРАН ЗАВЕРШЕНИЯ
+// ══════════════════════════════════════════════════
+function showDone() {
+    document.getElementById('st-main-row').style.display = 'none';
+    document.querySelector('.st-actions').style.display  = 'none';
+    document.getElementById('st-done').style.display     = 'flex';
+
+    const total = sessionCards.length;
+    document.getElementById('done-correct').textContent  = correctCount;
+    document.getElementById('done-skipped').textContent  = skippedCount;
+    document.getElementById('done-total').textContent    = total;
+
+    const pct = total > 0 ? Math.round((correctCount / total) * 100) : 0;
+    document.getElementById('st-done-emoji').textContent =
+        pct >= 80 ? '🎉' : pct >= 50 ? '💪' : '📖';
+    document.getElementById('st-done-title').textContent =
+        pct >= 80 ? 'Отличный результат!' : pct >= 50 ? 'Хороший прогресс!' : 'Продолжайте практиковаться!';
+    document.getElementById('st-done-desc').textContent =
+        `Написано верно: ${correctCount} из ${total} карточек`;
+}
+
+function restartSession() {
+    initSession();
+}
+
+// ══════════════════════════════════════════════════
+//  СТАРТ
+// ══════════════════════════════════════════════════
+if (ALL_CARDS.length > 0) {
+    initSession();
+}
+</script>
+{% endblock %}

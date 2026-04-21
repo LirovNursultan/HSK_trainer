@@ -16,6 +16,49 @@ import json
 from .models import Card, MyDictionary, DictionaryCard
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
+@login_required
+def stroke_session(request):
+    """
+    Тренажёр рисования иероглифов.
+    Карточки берутся из личного словаря пользователя.
+    Порядок черт — HanziWriter (CDN).
+    """
+    try:
+        user_dict = request.user.dictionary
+    except MyDictionary.DoesNotExist:
+        user_dict = MyDictionary.objects.create(user=request.user)
+
+    cards = user_dict.cards.all()
+
+    if not cards.exists():
+        return render(request, 'trainer/stroke.html', {
+            'cards_json': '[]',
+            'empty': True,
+        })
+
+    def card_to_dict(card):
+        return {
+            'id': card.id,
+            'hieroglyph': card.hieroglyph,
+            'transcription': card.transcription,
+            'translate': card.translate,
+        }
+
+    card_data = [card_to_dict(c) for c in cards]
+
+    total_cards = user_dict.get_cards_count()
+    learned_cards = DictionaryCard.objects.filter(
+        dictionary=user_dict, is_learned=True).count()
+    not_learned_cards = DictionaryCard.objects.filter(
+        dictionary=user_dict, is_learned=False).count()
+
+    return render(request, 'trainer/stroke.html', {
+        'cards_json': json.dumps(card_data),
+        'total_cards': total_cards,
+        'learned_cards': learned_cards,
+        'not_learned_cards': not_learned_cards,
+        'empty': False,
+    })
 
 @login_required
 @require_POST
