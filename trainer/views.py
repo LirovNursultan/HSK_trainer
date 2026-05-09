@@ -283,29 +283,51 @@ class MyDictionaryPDFView(LoginRequiredMixin, View):
         return response
         
 def card_list(request):
+    search = request.GET.get('search', '').strip()
+    
     cards = Card.objects.all()
     
-    paginator = Paginator(cards, 20)
-    page_number = request.GET.get('page', 1)
+    if search:
+        cards = cards.filter(
+            Q(hieroglyph__icontains=search) |
+            Q(transcription__icontains=search) |
+            Q(translate__icontains=search)
+        )
     
-    try:
-        page_obj = paginator.page(page_number)
-    except PageNotAnInteger:
-        page_obj = paginator.page(1)
-    except EmptyPage:
-        page_obj = paginator.page(1)
-    
-    context = {'page_obj': page_obj}
-    
+    # Добавленные карточки — в конец
     if request.user.is_authenticated:
         user_dict = request.user.dictionary
         in_dict_ids = set(
             DictionaryCard.objects.filter(dictionary=user_dict)
                                   .values_list('card_id', flat=True)
         )
-        context['in_dict_ids'] = in_dict_ids
-    
-    return render(request, 'trainer/card_list.html', context)
+        # Аннотируем: 0 = не добавлена (первые), 1 = добавлена (последние)
+        from django.db.models import Case, When, IntegerField
+        cards = cards.annotate(
+            in_dict=Case(
+                When(id__in=in_dict_ids, then=1),
+                default=0,
+                output_field=IntegerField(),
+            )
+        ).order_by('in_dict', 'id')
+    else:
+        in_dict_ids = set()
+        cards = cards.order_by('id')
+
+    paginator = Paginator(cards, 20)
+    page_number = request.GET.get('page', 1)
+    try:
+        page_obj = paginator.page(page_number)
+    except (PageNotAnInteger, EmptyPage):
+        page_obj = paginator.page(1)
+
+    return render(request, 'trainer/card_list.html', {
+        'page_obj': page_obj,
+        'cards': page_obj,
+        'in_dict_ids': in_dict_ids,
+        'search': search,
+        'total_count': paginator.count,
+    })
 
 def create_card(request):
     if request.method == 'POST':
