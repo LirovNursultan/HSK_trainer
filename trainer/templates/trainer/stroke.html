@@ -560,6 +560,8 @@ let correctCount  = 0;
 let skippedCount  = 0;
 let totalStrokes  = 0;
 let correctStrokes = 0;
+let cardTotalStrokes = 0;
+let cardCorrectStrokes = 0;
 let outlineVisible = true;
 
 let writer     = null;   // HanziWriter для холста
@@ -567,6 +569,11 @@ let animWriter = null;   // HanziWriter для превью-анимации
 let currentStrokeNum   = 0;
 let totalStrokeCount   = 0;
 let cardFinished = false;
+let hintMode = false;
+
+// Для многосимвольных карточек (杯子 → ['杯','子'])
+let charList     = [];   // список символов текущей карточки
+let currentCharIdx = 0; // какой символ сейчас практикуем
 
 // ══════════════════════════════════════════════════
 //  УТИЛИТЫ
@@ -609,6 +616,8 @@ function initSession() {
     skippedCount  = 0;
     totalStrokes  = 0;
     correctStrokes = 0;
+    cardTotalStrokes = 0;
+    cardCorrectStrokes = 0;
     outlineVisible = true;
 
     document.getElementById('st-done').style.display = 'none';
@@ -628,15 +637,49 @@ function loadCard() {
     }
 
     const card = sessionCards[currentIdx];
-    cardFinished   = false;
+
+    // Разбиваем иероглиф на отдельные символы
+    // filter убирает пробелы и нечитаемые символы
+    charList = Array.from(card.hieroglyph).filter(ch => ch.trim() && ch.charCodeAt(0) > 0x3000);
+    if (charList.length === 0) charList = [card.hieroglyph[0]]; // fallback
+    currentCharIdx = 0;
+    cardTotalStrokes = 0;
+    cardCorrectStrokes = 0;
+
+    // Инфо-панель — показываем всю карточку целиком
+    document.getElementById('st-hanzi-display').textContent    = card.hieroglyph;
+    document.getElementById('st-pinyin-display').textContent   = card.transcription;
+    document.getElementById('st-translate-display').textContent = card.translate;
+
+    updateProgress();
+    loadChar();
+}
+
+// ── Загрузка одного символа из charList ──
+function loadChar() {
+    const card = sessionCards[currentIdx];
+    const char = charList[currentCharIdx];
+
+    cardFinished      = false;
+    hintMode          = false;
     currentStrokeNum  = 0;
     totalStrokeCount  = 0;
-    outlineVisible = true;
+    totalStrokes      = 0;
+    correctStrokes    = 0;
+    outlineVisible    = true;
 
-    // Обновить инфо-панель
-    document.getElementById('st-hanzi-display').textContent   = card.hieroglyph;
-    document.getElementById('st-pinyin-display').textContent  = card.transcription;
-    document.getElementById('st-translate-display').textContent = card.translate;
+    // Подсвечиваем текущий символ в инфо-панели
+    if (charList.length > 1) {
+        const highlighted = charList.map((ch, i) => {
+            if (i === currentCharIdx) {
+                return `<span style="color:#dc3545;border-bottom:2px solid #dc3545;">${ch}</span>`;
+            }
+            return `<span style="color:#adb5bd;">${ch}</span>`;
+        }).join('');
+        document.getElementById('st-hanzi-display').innerHTML = highlighted;
+    } else {
+        document.getElementById('st-hanzi-display').textContent = card.hieroglyph;
+    }
 
     // Сбросить кнопку контура
     const btn = document.getElementById('st-toggle-outline');
@@ -645,10 +688,21 @@ function loadCard() {
     setEyeIcon(true);
 
     // Сбросить фидбэк
-    setFeedback('neutral', 'Нарисуйте первую черту');
+    const charLabel = charList.length > 1
+        ? `Нарисуйте «${char}» (${currentCharIdx + 1}/${charList.length})`
+        : 'Нарисуйте первую черту';
+    setFeedback('neutral', charLabel);
 
-    // Прогресс
-    updateProgress();
+    // Сбросить кнопки
+    const hintBtn = document.getElementById('btn-hint');
+    hintBtn.disabled = false;
+    hintBtn.textContent = 'подсказка';
+    hintBtn.style.background = '';
+    document.getElementById('btn-erase').disabled = false;
+    document.getElementById('st-accuracy').textContent = '—';
+    const skipBtn = document.getElementById('btn-skip');
+    skipBtn.textContent = 'пропустить →';
+    skipBtn.onclick = skipCard;
 
     // Уничтожить старые writer-ы
     const target = document.getElementById('hanzi-writer-target');
@@ -656,12 +710,11 @@ function loadCard() {
     const animTarget = document.getElementById('anim-writer-target');
     animTarget.innerHTML = '';
 
-    // Размер холста — берём из родительского элемента
     const area = target.parentElement;
     const size = area.offsetWidth || 280;
 
     // ── Основной writer (quiz-режим) ──
-    writer = HanziWriter.create('hanzi-writer-target', card.hieroglyph, {
+    writer = HanziWriter.create('hanzi-writer-target', char, {
         width:  size,
         height: size,
         padding: size * 0.08,
@@ -682,14 +735,18 @@ function loadCard() {
             startQuiz();
         },
         onLoadCharDataError: function() {
-            setFeedback('bad', 'Нет данных для этого иероглифа — пропустите карточку');
+            setFeedback('bad', `Нет данных для «${char}» — нажмите «далее» чтобы продолжить`);
             document.getElementById('btn-hint').disabled = true;
             document.getElementById('btn-erase').disabled = true;
+            // Автоматически переходим к следующему символу или карточке
+            const skipBtn = document.getElementById('btn-skip');
+            skipBtn.textContent = 'далее →';
+            skipBtn.onclick = nextChar;
         }
     });
 
     // ── Анимационный writer (превью) ──
-    animWriter = HanziWriter.create('anim-writer-target', card.hieroglyph, {
+    animWriter = HanziWriter.create('anim-writer-target', char, {
         width:  52,
         height: 52,
         padding: 4,
@@ -705,18 +762,37 @@ function loadCard() {
 //  QUIZ-РЕЖИМ
 // ══════════════════════════════════════════════════
 
-// Общий колбэк завершения карточки
+// Общий колбэк завершения одного символа
 function onCardComplete() {
     if (cardFinished) return;
     cardFinished = true;
-    correctCount++;
-    const acc = totalStrokes > 0 ? Math.round((correctStrokes / totalStrokes) * 100) : 100;
+
+    const acc = cardTotalStrokes > 0 ? Math.round((cardCorrectStrokes / cardTotalStrokes) * 100) : 100;
     document.getElementById('st-accuracy').textContent = acc + '%';
-    setFeedback('ok', 'Карточка завершена! Нажмите «Далее»');
-    sendResult(sessionCards[currentIdx].id, 'correct');
-    const skipBtn = document.getElementById('btn-skip');
-    skipBtn.textContent = 'Далее →';
-    skipBtn.onclick = nextCard;
+
+    const isLastChar = currentCharIdx >= charList.length - 1;
+
+    if (isLastChar) {
+        // Все символы карточки пройдены
+        correctCount++;
+        sendResult(sessionCards[currentIdx].id, 'correct');
+        setFeedback('ok', 'Карточка завершена! Нажмите «Далее»');
+        const skipBtn = document.getElementById('btn-skip');
+        skipBtn.textContent = 'Далее →';
+        skipBtn.onclick = nextCard;
+    } else {
+        // Ещё есть символы — переходим к следующему
+        setFeedback('ok', `«${charList[currentCharIdx]}» готово! Следующий символ...`);
+        const skipBtn = document.getElementById('btn-skip');
+        skipBtn.textContent = `Следующий символ →`;
+        skipBtn.onclick = nextChar;
+    }
+}
+
+// Переход к следующему символу внутри карточки
+function nextChar() {
+    currentCharIdx++;
+    loadChar();
 }
 
 // Строим объект опций для quiz, начиная с нужной черты
@@ -726,6 +802,7 @@ function buildQuizOptions(startStroke, showHint) {
         showHintAfterMisses: showHint || false,
         onMistake: function(strokeData) {
             totalStrokes++;
+            cardTotalStrokes++;
             currentStrokeNum = strokeData.strokeNum;
             setFeedback('bad', showHint ? 'Неверно — сейчас появится подсказка' : 'Неверно — попробуйте ещё раз');
             updateStrokeBadge(strokeData.strokeNum + 1);
@@ -734,6 +811,8 @@ function buildQuizOptions(startStroke, showHint) {
         onCorrectStroke: function(strokeData) {
             totalStrokes++;
             correctStrokes++;
+            cardTotalStrokes++;
+            cardCorrectStrokes++;
             currentStrokeNum = strokeData.strokeNum + 1;
             const isLast = strokeData.strokeNum + 1 >= totalStrokeCount;
             setFeedback('ok', isLast ? 'Отлично! Иероглиф написан верно!' : 'Правильно! Следующая черта');
@@ -806,11 +885,18 @@ function setFeedback(type, text) {
 function giveHint() {
     if (!writer || cardFinished) return;
 
-    // cancelQuiz + перезапуск с текущей черты и showHintAfterMisses:1
-    // При первом же промахе HanziWriter сам анимирует правильную черту
+    hintMode = !hintMode;
+
+    const btn = document.getElementById('btn-hint');
+    btn.textContent = hintMode ? 'подсказка вкл' : 'подсказка';
+    btn.style.background = hintMode ? '#fff5f5' : '';
+
     writer.cancelQuiz();
-    writer.quiz(buildQuizOptions(currentStrokeNum, 1));
-    setFeedback('neutral', 'Нарисуйте черту — при ошибке появится анимация подсказки');
+    writer.quiz(buildQuizOptions(currentStrokeNum, hintMode ? 3 : false));
+
+    setFeedback('neutral', hintMode
+        ? 'Подсказка включена — после 3 ошибок появится анимация'
+        : 'Подсказка выключена');
 }
 
 function eraseStrokes() {
@@ -820,6 +906,8 @@ function eraseStrokes() {
     writer.cancelQuiz();
 
     // 2. Сбрасываем точки, счётчик черты и счётчики точности
+    cardTotalStrokes = Math.max(0, cardTotalStrokes - totalStrokes);
+    cardCorrectStrokes = Math.max(0, cardCorrectStrokes - correctStrokes);
     currentStrokeNum = 0;
     totalStrokes = 0;
     correctStrokes = 0;
@@ -840,12 +928,6 @@ function skipCard() {
 
 function nextCard() {
     currentIdx++;
-    // Сбросить кнопку пропустить
-    const skipBtn = document.getElementById('btn-skip');
-    skipBtn.textContent = 'пропустить →';
-    skipBtn.onclick = skipCard;
-    document.getElementById('btn-hint').disabled  = false;
-    document.getElementById('btn-erase').disabled = false;
     document.getElementById('st-accuracy').textContent = '—';
     updateProgress();
     loadCard();
