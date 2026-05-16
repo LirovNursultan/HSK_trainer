@@ -1,312 +1,656 @@
 {% extends '../base.html' %}
+{% block extra_head %}
+<style>
+    body { background: #f4f4f6 !important; }
+
+    /* ══════════════════════════════════════
+       HERO HEADER
+    ══════════════════════════════════════ */
+    .cl-hero {
+        background: #fff;
+        border-bottom: 1px solid #ebebeb;
+        padding: 2rem 0 0;
+        margin-bottom: 2rem;
+    }
+    .cl-hero-inner {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 1.5rem;
+    }
+    .cl-hero-top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+    }
+    .cl-title {
+        font-family: 'Georgia', serif;
+        font-size: 2rem;
+        font-weight: 700;
+        color: #1a1a1a;
+        line-height: 1.1;
+        margin: 0 0 0.3rem;
+    }
+    .cl-title span {
+        color: #dc3545;
+    }
+    .cl-subtitle {
+        font-size: 0.85rem;
+        color: #adb5bd;
+        margin: 0;
+    }
+    .cl-hero-actions {
+        display: flex;
+        gap: 0.6rem;
+        align-items: center;
+        flex-shrink: 0;
+    }
+    .cl-btn-trainers {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: #dc3545;
+        color: #fff;
+        border: none;
+        padding: 0.6rem 1.2rem;
+        border-radius: 10px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.2s;
+        box-shadow: 0 2px 8px rgba(220,53,69,0.25);
+    }
+    .cl-btn-trainers:hover {
+        background: #c82333;
+        color: #fff;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 14px rgba(220,53,69,0.35);
+        text-decoration: none;
+    }
+
+    /* ══════════════════════════════════════
+       ПОИСК
+    ══════════════════════════════════════ */
+    .cl-search-bar {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        background: #f8f9fa;
+        border: 1.5px solid #e9ecef;
+        border-radius: 14px;
+        padding: 0.6rem 1rem;
+        margin-bottom: 0;
+        transition: border-color 0.2s;
+    }
+    .cl-search-bar:focus-within {
+        border-color: #dc3545;
+        background: #fff;
+    }
+    .cl-search-bar svg {
+        width: 16px; height: 16px;
+        color: #adb5bd;
+        flex-shrink: 0;
+        transition: color 0.2s;
+    }
+    .cl-search-bar:focus-within svg { color: #dc3545; }
+    .cl-search-input {
+        border: none;
+        background: transparent;
+        outline: none;
+        font-size: 0.9rem;
+        color: #212529;
+        flex: 1;
+        min-width: 0;
+    }
+    .cl-search-input::placeholder { color: #ced4da; }
+    .cl-search-clear {
+        background: none;
+        border: none;
+        color: #adb5bd;
+        cursor: pointer;
+        padding: 0;
+        font-size: 1.1rem;
+        line-height: 1;
+        transition: color 0.2s;
+        display: none;
+    }
+    .cl-search-clear:hover { color: #dc3545; }
+    .cl-search-clear.visible { display: block; }
+    .cl-search-submit {
+        background: #dc3545;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        padding: 0.35rem 0.85rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        white-space: nowrap;
+    }
+    .cl-search-submit:hover { background: #c82333; }
+
+    /* ══════════════════════════════════════
+       TABS (подчёркивание под hero)
+    ══════════════════════════════════════ */
+    .cl-tabs {
+        display: flex;
+        gap: 0;
+        margin-top: 1.2rem;
+        border-top: 1px solid #ebebeb;
+    }
+    .cl-tab {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #adb5bd;
+        padding: 0.75rem 1.1rem;
+        border-bottom: 2.5px solid transparent;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+    .cl-tab:hover { color: #495057; text-decoration: none; }
+    .cl-tab.active { color: #dc3545; border-bottom-color: #dc3545; }
+    .cl-tab .count {
+        background: #f0f0f0;
+        color: #6c757d;
+        font-size: 0.7rem;
+        padding: 1px 7px;
+        border-radius: 100px;
+        font-weight: 600;
+    }
+    .cl-tab.active .count { background: #fde8ea; color: #dc3545; }
+
+    /* ══════════════════════════════════════
+       КОНТЕНТ
+    ══════════════════════════════════════ */
+    .cl-content {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 1.5rem 3rem;
+    }
+
+    /* ══════════════════════════════════════
+       КАРТОЧКИ (грид)
+    ══════════════════════════════════════ */
+    .cl-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+
+    .cl-card {
+        background: #fff;
+        border-radius: 16px;
+        border: 1.5px solid #ebebeb;
+        overflow: hidden;
+        transition: all 0.22s ease;
+        cursor: pointer;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+    }
+    .cl-card:hover {
+        border-color: #dc3545;
+        transform: translateY(-3px);
+        box-shadow: 0 8px 24px rgba(220,53,69,0.1);
+    }
+    .cl-card.in-dict {
+        border-color: #e9ecef;
+        opacity: 0.72;
+    }
+    .cl-card.in-dict:hover {
+        opacity: 1;
+        border-color: #adb5bd;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.07);
+    }
+
+    /* Бейдж "в словаре" */
+    .cl-card-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: #e9f7ef;
+        color: #28a745;
+        border-radius: 100px;
+        font-size: 0.6rem;
+        font-weight: 700;
+        padding: 2px 8px;
+        letter-spacing: 0.03em;
+    }
+
+    .cl-card-body {
+        padding: 1.2rem 1rem 0.8rem;
+        text-align: center;
+        flex: 1;
+    }
+    .cl-card-hanzi {
+        font-family: 'SimHei', 'Microsoft YaHei', sans-serif;
+        font-size: 2.8rem;
+        font-weight: bold;
+        color: #1a1a1a;
+        line-height: 1;
+        margin-bottom: 0.5rem;
+        transition: color 0.2s;
+    }
+    .cl-card:hover .cl-card-hanzi { color: #dc3545; }
+    .cl-card.in-dict .cl-card-hanzi { color: #6c757d; }
+    .cl-card-pinyin {
+        font-size: 0.75rem;
+        color: #adb5bd;
+        font-style: italic;
+        margin-bottom: 0.4rem;
+    }
+    .cl-card-translate {
+        font-size: 0.8rem;
+        color: #495057;
+        line-height: 1.4;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .cl-card-footer {
+        padding: 0.65rem 0.75rem;
+        border-top: 1px solid #f4f4f6;
+        display: flex;
+        gap: 0.4rem;
+        justify-content: center;
+    }
+    .cl-card-btn {
+        flex: 1;
+        padding: 0.4rem 0.3rem;
+        border-radius: 7px;
+        border: 1px solid #e9ecef;
+        background: #f8f9fa;
+        color: #6c757d;
+        font-size: 0.7rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.18s;
+        text-align: center;
+        white-space: nowrap;
+    }
+    .cl-card-btn:hover { border-color: #adb5bd; color: #495057; }
+    .cl-card-btn.add { border-color: #dc3545; color: #dc3545; background: #fff; }
+    .cl-card-btn.add:hover { background: #dc3545; color: #fff; }
+    .cl-card-btn.added { border-color: #e9ecef; color: #adb5bd; cursor: default; }
+    .cl-card-btn.audio { border-color: #e9ecef; }
+    .cl-card-btn.audio:hover { border-color: #dc3545; color: #dc3545; background: #fff5f5; }
+
+    /* ══════════════════════════════════════
+       ПУСТОЕ СОСТОЯНИЕ
+    ══════════════════════════════════════ */
+    .cl-empty {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: #adb5bd;
+    }
+    .cl-empty .icon { font-size: 3rem; margin-bottom: 1rem; }
+    .cl-empty h4 { color: #6c757d; margin-bottom: 0.5rem; }
+    .cl-empty p { font-size: 0.9rem; }
+
+    /* ══════════════════════════════════════
+       ПАГИНАЦИЯ
+    ══════════════════════════════════════ */
+    .cl-pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 0.35rem;
+        margin-top: 2.5rem;
+        flex-wrap: wrap;
+    }
+    .cl-page-btn {
+        width: 36px; height: 36px;
+        border-radius: 9px;
+        border: 1.5px solid #e9ecef;
+        background: #fff;
+        color: #495057;
+        font-size: 0.82rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.18s;
+        display: flex; align-items: center; justify-content: center;
+        text-decoration: none;
+    }
+    .cl-page-btn:hover { border-color: #dc3545; color: #dc3545; text-decoration: none; }
+    .cl-page-btn.active { background: #dc3545; border-color: #dc3545; color: #fff; }
+    .cl-page-btn.disabled { opacity: 0.35; pointer-events: none; }
+    .cl-page-sep { color: #ced4da; font-size: 0.8rem; padding: 0 0.2rem; }
+    .cl-page-info {
+        text-align: center;
+        font-size: 0.75rem;
+        color: #adb5bd;
+        margin-top: 0.75rem;
+    }
+
+    /* ══════════════════════════════════════
+       МОДАЛКА
+    ══════════════════════════════════════ */
+    .cl-modal-hanzi {
+        font-family: 'SimHei', 'Microsoft YaHei', sans-serif;
+        font-size: 4.5rem;
+        font-weight: bold;
+        color: #dc3545;
+        line-height: 1;
+        margin-bottom: 0.5rem;
+    }
+
+    /* ══════════════════════════════════════
+       УВЕДОМЛЕНИЕ
+    ══════════════════════════════════════ */
+    .cl-toast {
+        position: fixed;
+        bottom: 2rem;
+        left: 50%;
+        transform: translateX(-50%) translateY(80px);
+        background: #212529;
+        color: #fff;
+        padding: 0.65rem 1.4rem;
+        border-radius: 100px;
+        font-size: 0.82rem;
+        font-weight: 500;
+        opacity: 0;
+        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        white-space: nowrap;
+        z-index: 9999;
+        pointer-events: none;
+    }
+    .cl-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .cl-toast.green { background: #28a745; }
+    .cl-toast.orange { background: #fd7e14; }
+
+    @media (max-width: 576px) {
+        .cl-grid { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
+        .cl-title { font-size: 1.5rem; }
+        .cl-hero-top { flex-direction: column; }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container card-container">
-    <div class="row mb-4">
-        <div class="col-12">
-            <h1 class="mb-2">HSK Карточки</h1>
-            <p class="text-muted">Управляйте своим словарём китайских иероглифов</p>
+
+<!-- ══ HERO ══ -->
+<div class="cl-hero">
+    <div class="cl-hero-inner">
+        <div class="cl-hero-top">
+            <div>
+                <h1 class="cl-title">HSK <span>Карточки</span></h1>
+                <p class="cl-subtitle">База из {{ total_count }} иероглифов · добавляйте в личный словарь</p>
+            </div>
+            <div class="cl-hero-actions">
+                <a href="{% url 'trainers_home' %}" class="cl-btn-trainers">
+                    <i class="bi bi-rocket-takeoff-fill"></i> Тренажёры
+                </a>
+            </div>
         </div>
-        <div class="col-auto">
-            <a href="{% url 'trainers_home' %}" class="btn btn-outline-danger btn-lg">
-                <i class="bi bi-rocket-takeoff-fill me-2"></i>Тренажёры
+
+        <!-- Поиск -->
+        <form method="get" action="" id="search-form">
+            <div class="cl-search-bar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input type="text" name="search" id="search-input"
+                       class="cl-search-input"
+                       placeholder="Поиск по иероглифу, пиньиню или переводу..."
+                       value="{{ search }}"
+                       autocomplete="off">
+                <button type="button" class="cl-search-clear {% if search %}visible{% endif %}"
+                        id="search-clear" onclick="clearSearch()">×</button>
+                <button type="submit" class="cl-search-submit">Найти</button>
+            </div>
+        </form>
+
+        <!-- Табы -->
+        <div class="cl-tabs">
+            <a href="{% url 'card_list' %}" class="cl-tab active">
+                Все карточки
+                <span class="count">{{ total_count }}</span>
             </a>
+            {% if user.is_authenticated %}
+            <a href="{% url 'my_cards' %}" class="cl-tab">
+                Мой словарь
+            </a>
+            {% endif %}
         </div>
     </div>
+</div>
 
-    <!-- Таблица карточек -->
-    <div class="table-responsive">
-        <table class="table table-hover table-striped align-middle">
-            <thead class="table-light">
-                <tr>
-                    <th style="width: 15%;">Иероглиф</th>
-                    <th style="width: 15%;">Пиньинь</th>
-                    <th style="width: 40%;">Перевод</th>
-                    <th style="width: 30%;">Действия</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for card in page_obj %}
-                    <tr>
-                        <!-- Иероглиф -->
-                        <td>
-                            <div style="font-size: 1.8rem; font-weight: bold; color: #dc3545; font-family: 'SimHei', 'Microsoft YaHei', sans-serif;">
-                                {{ card.hieroglyph }}
+<!-- ══ CONTENT ══ -->
+<div class="cl-content">
+
+    {% if page_obj.object_list %}
+        <div class="cl-grid" id="cards-grid">
+            {% for card in page_obj %}
+                <div class="cl-card {% if card.id in in_dict_ids %}in-dict{% endif %}"
+                     id="card-{{ card.id }}">
+
+                    {% if card.id in in_dict_ids %}
+                        <span class="cl-card-badge">✓ в словаре</span>
+                    {% endif %}
+
+                    <div class="cl-card-body" onclick="openModal({{ card.id }})">
+                        <div class="cl-card-hanzi">{{ card.hieroglyph }}</div>
+                        <div class="cl-card-pinyin">{{ card.transcription }}</div>
+                        <div class="cl-card-translate">{{ card.translate }}</div>
+                    </div>
+
+                    <div class="cl-card-footer">
+                        {% if card.audio %}
+                            <button class="cl-card-btn audio"
+                                    onclick="playAudio('{{ card.audio.url }}')"
+                                    title="Слушать">
+                                <i class="bi bi-play-fill"></i> Слушать
+                            </button>
+                        {% endif %}
+
+                        {% if user.is_authenticated %}
+                            {% if card.id in in_dict_ids %}
+                                <button class="cl-card-btn added" disabled>
+                                    <i class="bi bi-check-circle-fill"></i> Добавлено
+                                </button>
+                            {% else %}
+                                <button class="cl-card-btn add"
+                                        onclick="addToDictionary({{ card.id }}, this)"
+                                        title="Добавить в словарь">
+                                    <i class="bi bi-plus-circle"></i> Добавить
+                                </button>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Модалка для этой карточки -->
+                <div class="modal fade" id="modal-{{ card.id }}" tabindex="-1">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content border-0" style="border-radius:20px; overflow:hidden;">
+                            <div class="modal-header border-0 pb-0">
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                             </div>
-                        </td>
-
-                        <!-- Пиньинь -->
-                        <td>
-                            <small class="text-muted">{{ card.transcription }}</small>
-                        </td>
-
-                        <!-- Перевод -->
-                        <td>
-                            <span>{{ card.translate }}</span>
-                        </td>
-
-                        <!-- Действия -->
-                        <td>
-                            <div class="btn-group" role="group">
-                                <!-- Кнопка воспроизведения аудио -->
+                            <div class="modal-body text-center px-4 pb-2">
+                                <div class="cl-modal-hanzi">{{ card.hieroglyph }}</div>
+                                <div style="font-size:1.1rem; color:#6c757d; font-style:italic; margin-bottom:0.5rem;">
+                                    {{ card.transcription }}
+                                </div>
+                                <div style="font-size:1rem; color:#212529; margin-bottom:1.5rem;">
+                                    {{ card.translate }}
+                                </div>
                                 {% if card.audio %}
-                                    <button class="btn btn-sm btn-outline-danger" 
-                                            onclick="playAudio('{{ card.audio.url }}')"
-                                            title="Слушать произношение">
-                                        <i class="bi bi-play-circle"></i> Слушать
-                                    </button>
-                                {% else %}
-                                    <button class="btn btn-sm btn-outline-secondary" disabled title="Аудио недоступно">
-                                        <i class="bi bi-mic-mute"></i> Нет аудио
+                                    <button class="btn btn-danger btn-sm px-4 mb-3"
+                                            onclick="playAudio('{{ card.audio.url }}')">
+                                        <i class="bi bi-play-fill"></i> Прослушать
                                     </button>
                                 {% endif %}
-
-                                <!-- Кнопка просмотра -->
-                                <button class="btn btn-sm btn-outline-primary" 
-                                        data-bs-toggle="modal" 
-                                        data-bs-target="#cardModal{{ card.id }}"
-                                        title="Просмотреть детали">
-                                    <i class="bi bi-eye"></i> Просмотр
-                                </button>
-
-                                <!-- Кнопка добавления в словарь -->
-                                 <!-- {% if user.is_authenticated %} -->
-                                <button class="btn btn-sm add-to-dictionary {% if card.id in in_dict_ids %}btn-outline-secondary disabled{% else %}btn-outline-success{% endif %}"
-                                        data-card-id="{{ card.id }}"
-                                        data-original-text='<i class="bi bi-plus-circle-fill"></i> Добавить'
-                                        title="{% if card.id in in_dict_ids %}Уже в словаре{% else %}Добавить в словарь{% endif %}">
-                                    {% if card.id in in_dict_ids %}
-                                        <i class="bi bi-check-circle-fill"></i> Уже добавлено
-                                    {% else %}
-                                        <i class="bi bi-plus-circle-fill"></i> Добавить
-                                    {% endif %}
-                                </button>
-                                <!-- {% endif %} -->
                             </div>
-                        </td>
-                    </tr>
-
-                    <!-- Модальное окно для просмотра подробностей -->
-                    <div class="modal fade" id="cardModal{{ card.id }}" tabindex="-1">
-                        <div class="modal-dialog modal-dialog-centered">
-                            <div class="modal-content">
-                                <div class="modal-header border-0">
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                </div>
-                                <div class="modal-body text-center py-4">
-                                    <div style="font-size: 4rem; font-weight: bold; color: #dc3545; margin-bottom: 1rem; font-family: 'SimHei', 'Microsoft YaHei', sans-serif;">
-                                        {{ card.hieroglyph }}
-                                    </div>
-                                    <div class="mb-3">
-                                        <h5 class="text-muted mb-2">Пиньинь</h5>
-                                        <p style="font-size: 1.2rem;">{{ card.transcription }}</p>
-                                    </div>
-                                    <div class="mb-3">
-                                        <h5 class="text-muted mb-2">Перевод</h5>
-                                        <p style="font-size: 1.1rem;">{{ card.translate }}</p>
-                                    </div>
-                                    {% if card.audio %}
-                                        <button class="btn btn-danger" onclick="playAudio('{{ card.audio.url }}')">
-                                            <i class="bi bi-play-fill"></i> Прослушать
+                            <div class="modal-footer border-0 pt-0 px-4 pb-4">
+                                {% if user.is_authenticated %}
+                                    {% if card.id in in_dict_ids %}
+                                        <button class="btn btn-outline-secondary w-100" disabled>
+                                            <i class="bi bi-check-circle-fill"></i> Уже в словаре
+                                        </button>
+                                    {% else %}
+                                        <button class="btn btn-outline-danger w-100 modal-add-btn"
+                                                data-card-id="{{ card.id }}"
+                                                onclick="addToDictionary({{ card.id }}, this)">
+                                            <i class="bi bi-bookmark-plus-fill"></i> Добавить в словарь
                                         </button>
                                     {% endif %}
-                                </div>
-                                <div class="modal-footer border-0">
-                                    <button type="button" class="btn add-to-dictionary {% if card.id in in_dict_ids %}btn-outline-secondary disabled{% else %}btn-outline-success{% endif %}"
-                                            data-card-id="{{ card.id }}"
-                                            data-original-text='<i class="bi bi-bookmark-plus-fill"></i> Добавить в словарь'
-                                            data-bs-dismiss="modal">
-                                        {% if card.id in in_dict_ids %}
-                                            <i class="bi bi-check-circle-fill"></i> Уже добавлено
-                                        {% else %}
-                                            <i class="bi bi-bookmark-plus-fill"></i> Добавить в словарь
-                                        {% endif %}
-                                    </button>
-                                </div>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
-                {% empty %}
-                    <tr>
-                        <td colspan="4" class="text-center py-4">
-                            <div class="alert alert-info mb-0">
-                                <i class="bi bi-info-circle"></i> Карточки не найдены. Добавьте новые карточки.
-                            </div>
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-{% if page_obj.paginator.num_pages > 1 %}
-<nav aria-label="Навигация по страницам" class="mt-4">
-    <ul class="pagination pagination-sm justify-content-center flex-wrap gap-1">
+                </div>
+            {% endfor %}
+        </div>
 
-        <!-- Первая -->
-        <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
-            <a class="page-link" href="{% if page_obj.has_previous %}?page=1{% else %}#{% endif %}" title="Первая страница">
-                <i class="bi bi-chevron-double-left"></i>
-            </a>
-        </li>
-
-        <!-- Назад -->
-        <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
-            <a class="page-link" href="{% if page_obj.has_previous %}?page={{ page_obj.previous_page_number }}{% else %}#{% endif %}">
-                <i class="bi bi-chevron-left"></i>
-            </a>
-        </li>
-
-        <!-- Номера страниц -->
-        {% for num in page_obj.paginator.page_range %}
-            {% if page_obj.number == num %}
-                <li class="page-item active">
-                    <span class="page-link">{{ num }}</span>
-                </li>
-            {% elif num >= page_obj.number|add:"-3" and num <= page_obj.number|add:"3" %}
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ num }}">{{ num }}</a>
-                </li>
-            {% elif num == 1 or num == page_obj.paginator.num_pages %}
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ num }}">{{ num }}</a>
-                </li>
+        <!-- Пагинация -->
+        <div class="cl-pagination">
+            {% if page_obj.has_previous %}
+                <a href="?page=1{% if search %}&search={{ search }}{% endif %}" class="cl-page-btn" title="Первая">«</a>
+                <a href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}" class="cl-page-btn">‹</a>
+            {% else %}
+                <span class="cl-page-btn disabled">«</span>
+                <span class="cl-page-btn disabled">‹</span>
             {% endif %}
-        {% endfor %}
 
-        <!-- Вперёд -->
-        <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
-            <a class="page-link" href="{% if page_obj.has_next %}?page={{ page_obj.next_page_number }}{% else %}#{% endif %}">
-                <i class="bi bi-chevron-right"></i>
-            </a>
-        </li>
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <span class="cl-page-btn active">{{ num }}</span>
+                {% elif num == 1 or num == page_obj.paginator.num_pages or num >= page_obj.number|add:"-2" and num <= page_obj.number|add:"2" %}
+                    <a href="?page={{ num }}{% if search %}&search={{ search }}{% endif %}" class="cl-page-btn">{{ num }}</a>
+                {% elif num == page_obj.number|add:"-3" or num == page_obj.number|add:"3" %}
+                    <span class="cl-page-sep">…</span>
+                {% endif %}
+            {% endfor %}
 
-        <!-- Последняя -->
-        <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
-            <a class="page-link" href="{% if page_obj.has_next %}?page={{ page_obj.paginator.num_pages }}{% else %}#{% endif %}" title="Последняя страница">
-                <i class="bi bi-chevron-double-right"></i>
-            </a>
-        </li>
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}" class="cl-page-btn">›</a>
+                <a href="?page={{ page_obj.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}" class="cl-page-btn" title="Последняя">»</a>
+            {% else %}
+                <span class="cl-page-btn disabled">›</span>
+                <span class="cl-page-btn disabled">»</span>
+            {% endif %}
+        </div>
 
-    </ul>
-    <p class="text-center text-muted small mt-2">
-        Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}
-        &nbsp;·&nbsp;
-        Всего карточек: {{ page_obj.paginator.count }}
-    </p>
-</nav>
-{% endif %}
+        <div class="cl-page-info">
+            Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}
+            · Всего карточек: {{ total_count }}
+        </div>
 
+    {% else %}
+        <div class="cl-empty">
+            <div class="icon">🔍</div>
+            <h4>Ничего не найдено</h4>
+            <p>Попробуйте другой запрос — иероглиф, пиньинь или перевод</p>
+        </div>
+    {% endif %}
 </div>
 
-<style>
-    .table {
-        background-color: #fff;
-        border-radius: 8px;
-        overflow: hidden;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.08);
-    }
-
-    .table thead {
-        background-color: #f8f9fa;
-        font-weight: 600;
-        color: #495057;
-    }
-
-    .table tbody tr:hover {
-        background-color: #f8f9fa;
-        transition: background-color 0.15s ease;
-    }
-
-    .btn-group .btn {
-        border-color: #dee2e6;
-    }
-
-    .btn-group .btn:hover {
-        transition: all 0.15s ease;
-    }
-
-    .modal-content {
-        border-radius: 12px;
-        border: 1px solid #dee2e6;
-    }
-</style>
+<!-- Тост -->
+<div class="cl-toast" id="cl-toast"></div>
 
 <script>
-    function playAudio(audioUrl) {
-        const audio = new Audio(audioUrl);
-        audio.play();
-    }
+// ── Открыть модалку ──
+function openModal(cardId) {
+    const modal = new bootstrap.Modal(document.getElementById('modal-' + cardId));
+    modal.show();
+}
 
-    // Обработка кнопки "Добавить в словарь"
-    document.querySelectorAll('.add-to-dictionary').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            // Если уже disabled — ничего не делаем
-            if (this.disabled) return;
+// ── Аудио ──
+function playAudio(url) {
+    new Audio(url).play().catch(() => {});
+}
 
-            const cardId = this.getAttribute('data-card-id');
-            const originalHTML = this.getAttribute('data-original-text') || this.innerHTML;
+// ── Поиск: кнопка очистки ──
+const searchInput = document.getElementById('search-input');
+const searchClear = document.getElementById('search-clear');
+searchInput.addEventListener('input', function() {
+    searchClear.classList.toggle('visible', this.value.length > 0);
+});
+function clearSearch() {
+    searchInput.value = '';
+    searchClear.classList.remove('visible');
+    searchInput.focus();
+    document.getElementById('search-form').submit();
+}
 
-            // Временно показываем загрузку
-            this.innerHTML = '<i class="bi bi-arrow-repeat"></i> Добавление...';
-            this.disabled = true;
+// ── Добавить в словарь ──
+function addToDictionary(cardId, btn) {
+    const originalHTML = btn.innerHTML;
+    btn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Добавляем...';
+    btn.disabled = true;
 
-            fetch('/api/dictionary/add/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken'),
-                },
-                body: JSON.stringify({ card_id: cardId })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Успех
-                    this.innerHTML = '<i class="bi bi-check-circle-fill text-danger"></i> Уже добавлено';
-                    this.classList.remove('btn-outline-success');
-                    this.classList.add('btn-outline-secondary');
-                    this.disabled = true;
-                    showNotification('Карточка добавлена в словарь', 'success');
-                } else {
-                    // Ошибка — возвращаем оригинал
-                    this.innerHTML = originalHTML;
-                    this.disabled = false;
-                    showNotification(data.message || 'Не удалось добавить', 'warning');
-                }
-            })
-            .catch(error => {
-                console.error('Ошибка:', error);
-                this.innerHTML = originalHTML;
-                this.disabled = false;
-                showNotification('Ошибка соединения', 'danger');
+    fetch('/api/dictionary/add/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: JSON.stringify({ card_id: cardId })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            // Обновить все кнопки этой карточки (в гриде и модалке)
+            document.querySelectorAll(`[onclick*="addToDictionary(${cardId}"]`).forEach(b => {
+                b.innerHTML = '<i class="bi bi-check-circle-fill"></i> Добавлено';
+                b.className = b.className.replace('add', 'added');
+                b.disabled = true;
+                b.removeAttribute('onclick');
             });
-        });
-    });
-
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
+            // Обновить саму карточку в гриде
+            const card = document.getElementById('card-' + cardId);
+            if (card) {
+                card.classList.add('in-dict');
+                if (!card.querySelector('.cl-card-badge')) {
+                    const badge = document.createElement('span');
+                    badge.className = 'cl-card-badge';
+                    badge.textContent = '✓ в словаре';
+                    card.prepend(badge);
                 }
             }
+            showToast('Добавлено в словарь', 'green');
+        } else {
+            btn.innerHTML = originalHTML;
+            btn.disabled = false;
+            showToast(data.message || 'Уже в словаре', 'orange');
         }
-        return cookieValue;
-    }
+    })
+    .catch(() => {
+        btn.innerHTML = originalHTML;
+        btn.disabled = false;
+        showToast('Ошибка соединения', '');
+    });
+}
 
-    function showNotification(message, type = 'info') {
-        const alertDiv = document.createElement('div');
-        alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
-        alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 1050; min-width: 300px;';
-        alertDiv.innerHTML = `
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        `;
-        document.body.appendChild(alertDiv);
-        setTimeout(() => alertDiv.remove(), 3000);
-    }
+// ── Тост ──
+let toastTimer;
+function showToast(msg, color) {
+    const t = document.getElementById('cl-toast');
+    t.textContent = msg;
+    t.className = 'cl-toast ' + (color || '');
+    clearTimeout(toastTimer);
+    requestAnimationFrame(() => t.classList.add('show'));
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ── CSRF ──
+function getCookie(name) {
+    let v = null;
+    document.cookie.split(';').forEach(c => {
+        c = c.trim();
+        if (c.startsWith(name + '=')) v = decodeURIComponent(c.slice(name.length + 1));
+    });
+    return v;
+}
 </script>
 {% endblock %}
